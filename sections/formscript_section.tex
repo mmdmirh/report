@@ -1,69 +1,160 @@
 \subsection{FormScript: Interpretable Feedback via FormCodes}
 \label{sec:formscript}
 
-To provide meaningful, explanatory feedback, we implemented ``FormScript'', a rule-based system inspired by the ``PoseScript'' methodology \cite{delmas2022posescript}. While deep learning models can classify good vs. bad form, they often lack interpretability. FormScript solves this by discretizing continuous kinematic concepts into human-readable categories (FormCodes) and then applying logical rules (Super FormCodes) to generate feedback.
+To provide meaningful, explanatory feedback, we implemented ``FormScript'', a rule-based system inspired by the ``PoseScript'' methodology \cite{delmas2022posescript}. The core problem is that simple rep counters don't tell users \textit{how} to improve---users need to know \textit{why} a rep was good or bad. FormScript solves this by discretizing continuous kinematic measurements into human-readable categories (FormCodes) and then applying logical production rules (Super FormCodes) to generate actionable feedback.
 
-\subsubsection{FormCode Categorization}
-Following the taxonomy defined in PoseScript, we implemented low-level logic units called ``FormCodes''. We extended the original static definitions (Angles, Distances) to include dynamic temporal properties required for fitness analysis.
+\subsubsection{Elementary FormCodes}
 
-\paragraph{Spatial Relations (Static PoseCodes)}
-These FormCodes analyze the body geometry at key moments (e.g., the bottom of a squat). They are directly adapted from the PoseScript paper's categories:
+Following PoseScript's taxonomy, we define five types of elementary FormCodes. Each FormCode transforms a continuous measurement $v$ (angle in degrees or distance in meters) into a discrete category based on thresholds.
 
+\paragraph{Angle FormCodes}
+Measure joint flexion at key moments during exercise.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+completely bent & $v \pm 5 \leq 45$ & L/R-knee, L/R-elbow \\
+almost completely bent & $45 < v \pm 5 \leq 75$ & L/R-knee, L/R-elbow \\
+bent at right angle & $75 < v \pm 5 \leq 105$ & L/R-knee, L/R-elbow \\
+partially bent & $105 < v \pm 5 \leq 135$ & L/R-knee, L/R-elbow \\
+slightly bent & $135 < v \pm 5 \leq 160$ & L/R-knee, L/R-elbow \\
+straight & $v \pm 5 > 160$ & L/R-knee, L/R-elbow \\
+\hline
+\end{tabular}
+\caption{Angle FormCode categorizations with noise tolerance $\pm 5^\circ$.}
+\label{tab:angle-formcodes}
+\end{table}
+
+\paragraph{Distance FormCodes}
+Measure relative spacing between body parts.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition (m)} & \textbf{Applied To} \\
+\hline
+close & $v \pm 0.05 \leq 0.20$ & L/R-elbow vs. torso \\
+shoulder width & $0.20 < v \pm 0.05 \leq 0.40$ & L/R-foot, L/R-hand \\
+spread & $0.40 < v \pm 0.05 \leq 0.80$ & L/R-knee, L/R-foot \\
+wide & $v \pm 0.05 > 0.80$ & L/R-foot stance \\
+\hline
+\end{tabular}
+\caption{Distance FormCode categorizations.}
+\label{tab:distance-formcodes}
+\end{table}
+
+\paragraph{Relative Position FormCodes}
+Measure spatial relationships between joints along X, Y, and Z axes.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Axis} & \textbf{Categorization} & \textbf{Condition} \\
+\hline
+X (lateral) & at the right of / x-ignored / at the left of & $v \pm 0.05 \lessgtr \pm 0.15$ \\
+Y (vertical) & below / y-ignored / above & $v \pm 0.05 \lessgtr \pm 0.15$ \\
+Z (depth) & behind / z-ignored / in front of & $v \pm 0.05 \lessgtr \pm 0.15$ \\
+\hline
+\end{tabular}
+\caption{Relative position FormCode categorizations along each axis.}
+\label{tab:relpos-formcodes}
+\end{table}
+
+\paragraph{Pitch \& Roll FormCodes}
+Measure body segment orientation relative to vertical.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+vertical (upright) & $v \pm 5 \leq 10$ & torso, pelvis \\
+ignored (leaning) & $10 < v \pm 5 \leq 80$ & torso, pelvis \\
+horizontal (bent over) & $v \pm 5 > 80$ & torso, pelvis \\
+\hline
+\end{tabular}
+\caption{Pitch \& roll FormCode categorizations.}
+\label{tab:pitchroll-formcodes}
+\end{table}
+
+\paragraph{Ground-Contact FormCodes}
+Detect whether body parts are in contact with the ground.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition (m)} & \textbf{Applied To} \\
+\hline
+on the ground & $v \pm 0.05 \leq 0.10$ & L/R-knee, L/R-foot \\
+ground-ignored & $v \pm 0.05 > 0.10$ & L/R-knee, L/R-foot \\
+\hline
+\end{tabular}
+\caption{Ground-contact FormCode categorizations.}
+\label{tab:ground-formcodes}
+\end{table}
+
+\subsubsection{Super FormCodes: Production Rules}
+
+Super FormCodes aggregate multiple elementary FormCodes using logical production rules. Each Super FormCode defines a high-level body configuration by combining conditions with AND/OR operators.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Subject} & \textbf{Configuration} & \textbf{Production Rule} \\
+\hline
+torso & upright & pitch \& roll (pelvis, L-shoulder) = vertical AND pitch \& roll (pelvis, R-shoulder) = vertical \\
+\hline
+body & bent forward & relativePos Y (L-ankle, neck) = below AND relativePos Z (neck, pelvis) = front \\
+\hline
+knees & deep squat & angle (L-knee) = completely bent AND angle (R-knee) = completely bent \\
+\hline
+knees & parallel squat & angle (L-knee) = bent at right angle AND angle (R-knee) = bent at right angle \\
+\hline
+knees & stable & distance (L-knee, L-foot) = close AND distance (R-knee, R-foot) = close \\
+\hline
+knees & collapsed & relativePos X (L-knee, L-foot) = at right of OR relativePos X (R-knee, R-foot) = at left of \\
+\hline
+elbows & anchored & distance (L-elbow, torso) = close AND distance (R-elbow, torso) = close \\
+\hline
+elbows & drifting & distance (L-elbow, torso) = spread OR distance (R-elbow, torso) = spread \\
+\hline
+feet & shoulder width & distance (L-foot, R-foot) = shoulder width AND pitch \& roll (L-foot, R-foot) = horizontal \\
+\hline
+\end{tabular}
+\caption{Super FormCode production rules for exercise analysis.}
+\label{tab:super-formcodes}
+\end{table}
+
+\subsubsection{Exercise-Specific FormCode Application}
+
+\paragraph{Squat Analysis}
+Key FormCodes monitored: knee angle (depth), torso pitch (lean), knee-to-foot distance (stability), hip levelness (asymmetry).
+
+\paragraph{Bicep Curl Analysis}
+Key FormCodes monitored: elbow angle (contraction), elbow-to-torso distance (anchoring), shoulder/hip pitch (swing detection), wrist angle (neutral grip).
+
+\subsubsection{Instant Coaching Output}
+
+The FormScript pipeline produces real-time coaching by mapping Super FormCodes to actionable verbal cues:
 \begin{itemize}
-    \item \textbf{Angle Codes}: Measure the flexion of joints.
-    \begin{itemize}
-        \item \texttt{squat\_depth} (Squat): Categorizes the knee angle into ``deep'' ($<90^\circ$), ``parallel'' ($90^\circ-110^\circ$), or ``shallow'' ($>110^\circ$).
-        \item \texttt{peak\_flexion} (Bicep Curl): Categorizes elbow angle at top range into ``full contraction'', ``partial'', or ``incomplete''.
-        \item \texttt{wrist\_angle} (Bicep Curl): Detects if wrist is ``neutral'' vs ``flexed/extended''.
-    \end{itemize}
-    
-    \item \textbf{Pitch \& Roll Codes}: Measure the orientation of body parts relative to the vertical axis.
-    \begin{itemize}
-        \item \texttt{torso\_angle} (Squat): Categorizes trunk lean into ``upright'' ($<20^\circ$), ``leaning'', or ``bent over''.
-    \end{itemize}
-
-    \item \textbf{Distance \& Position Codes}: Measure relative positions between joints.
-    \begin{itemize}
-        \item \texttt{stance\_width} (Squat): Categorizes foot distance relative to shoulders (``narrow'', ``shoulder width'', ``wide'').
-        \item \texttt{knee\_forward\_travel} (Squat): Checks z-axis position of knees relative to toes (``over toes'', ``behind toes'').
-        \item \texttt{elbow\_position} (Bicep Curl): Checks x/z-axis drift of elbow relative to torso (``anchored'', ``drift'').
-    \end{itemize}
+    \item knees = collapsed $\rightarrow$ ``Push your knees out''
+    \item torso = bent forward $\rightarrow$ ``Chest up''
+    \item knees = parallel squat $\rightarrow$ ``Go deeper''
+    \item elbows = drifting $\rightarrow$ ``Pin your elbow to your side''
 \end{itemize}
 
-\paragraph{Temporal Dynamics (Dynamic FormCodes)}
-We extended the PoseScript framework to analyze motion quality over time, which is critical for exercise:
-
-\begin{itemize}
-    \item \textbf{Velocity Codes}: Measure the speed of movement phases.
-    \begin{itemize}
-        \item \texttt{descent\_speed} / \texttt{ascent\_speed} (Squat): ``controlled'', ``fast'', ``dive'', ``explosive''.
-        \item \texttt{lift\_speed} / \texttt{lower\_speed} (Bicep Curl): ``controlled'', ``slow'', ``fast drop''.
-    \end{itemize}
-
-    \item \textbf{Stability \& Deviation Codes}: Measure variance or jerk (shakiness) during movement.
-    \begin{itemize}
-        \item \texttt{knee\_stability} (Squat): Deviation of knees from the feet-hip line (``stable'', ``wobble'').
-        \item \texttt{movement\_smoothness} (Squat): Jerk metric for overall control.
-        \item \texttt{swing\_momentum} (Bicep Curl): Torso movement indicating cheating (``no swing'', ``body swing'').
-        \item \texttt{hip\_shift} (Squat): Symmetry metric for hip levelness.
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{Super FormCodes: The Rule Engine}
-To generate high-level coaching feedback, we aggregate these elementary FormCodes using logical production rules, termed ``Super FormCodes''. This allows us to define complex errors as combinations of simple states.
-
-\begin{figure}[h]
-    \centering
-    % \includegraphics[width=0.8\textwidth]{placeholder_logic.png}
-    \caption{Logic tree showing how Super FormCodes are derived from elementary FormCodes.}
-    \label{fig:logic}
-\end{figure}
-
-Examples of Production Rules:
-\begin{itemize}
-    \item \textbf{IF} \texttt{squat\_depth} IS ``deep'' \textbf{AND} \texttt{knee\_stability} IS ``stable'' \textbf{THEN} $\rightarrow$ \texttt{Good Rep}
-    \item \textbf{IF} \texttt{torso\_angle} IS ``bent\_over'' \textbf{AND} \texttt{descent\_speed} IS ``dive'' \textbf{THEN} $\rightarrow$ \texttt{Uncontrolled Forward Lean}
-    \item \textbf{IF} \texttt{swing\_momentum} IS ``body\_swing'' \textbf{THEN} $\rightarrow$ \texttt{Cheating Form} (User is using momentum)
-\end{itemize}
-
-This hierarchical approach ensures that the system works like a human coach: first observing specific details (angles, speeds), then synthesizing them into a coherent critique.
+This hierarchical approach ensures interpretable feedback: first observing specific joint measurements, then synthesizing them into coherent, actionable coaching.
