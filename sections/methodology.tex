@@ -1,0 +1,82 @@
+\section{Methodology}
+
+\subsection{Pose Acquisition}
+We employ MediaPipe Pose \cite{lugaresi2019mediapipe} for real-time keypoint extraction (33 2D joints). The stream is smoothed using a One-Euro filter to reduce jitter and ensure sub-100 ms latency.
+
+\subsection{Online Repetition Segmentation}
+Following AIFit's unsupervised approach, motion periodicity is analyzed from key joint angles (elbow, knee, hip). A simplified online state machine detects phase transitions—descent, bottom, ascent—using derivative sign changes with hysteresis. Each full cycle is labeled as one repetition.
+
+\subsection{Feature Computation and Calibration}
+From each repetition we compute angular features:
+\begin{itemize}
+    \item Active joints: elbows, knees, shoulders (max, min, correlation).
+    \item Passive joints: spine and pelvis (mean, standard deviation).
+\end{itemize}
+
+During calibration, each key joint or motion phase $i$ is analyzed over three ``best-form'' repetitions:
+The mean joint angle is
+\begin{equation}
+    \bar{U}_i = \frac{1}{3} \sum_{r=1}^{3} \theta_i^{(r)}
+\end{equation}
+
+Its deviation percentage from a canonical target $S_i$ is
+\begin{equation}
+    \eta_i = \frac{\bar{U}_i - S_i}{S_i}
+\end{equation}
+
+The pair $(\bar{U}_i, \eta_i)$ forms the personalized baseline and offset for that user.
+During runtime, for each joint or phase, the system:
+\begin{enumerate}
+    \item Measures the current angle $\theta_i$
+    \item Computes percentage deviation $e_i = \frac{|\theta_i - \bar{U}_i|}{|\bar{U}_i|}$
+\end{enumerate}
+
+A manually set critic parameter $\delta$ determines grading bands:
+\begin{itemize}
+    \item Good: $e_i < \delta$
+    \item Relatively good: $\delta \le e_i < 1.2 \delta$
+    \item Bad: $e_i \ge 1.2 \delta$
+\end{itemize}
+
+Repetition-level and session-level scores aggregate these joint/phase grades to summarize overall performance.
+
+\subsection{Real-Time Visual and Rule-Based Feedback}
+To maintain sub-100 ms latency during exercise, real-time feedback uses deterministic rule-based templates combined with AR visualization:
+\begin{itemize}
+    \item Template-based corrections: pre-defined feedback phrases mapped to specific error conditions (e.g., ``Lower your hips'' when pelvis deviation exceeds a threshold).
+    \item AR overlay: skeleton lines, target ``shadow'' poses, arrows toward ideal joint positions, and colored angle sectors (green = within band, red = error).
+    \item Audio cues (optional): brief beeps or spoken keywords for critical errors during high-intensity phases.
+\end{itemize}
+This approach ensures immediate, actionable feedback without network or computation delays, keeping users engaged in the flow state of exercise.
+
+\subsection{LLM-Driven Post-Session Analysis and Summary}
+After completing a workout session, accumulated performance data is processed by a Large Language Model to generate comprehensive, personalized coaching feedback.
+
+\paragraph{Input construction}
+Each session produces a detailed record such as:
+\begin{verbatim}
+{
+  "exercise": "push_up",
+  "total_reps": 15,
+...
+  "critic_level": 0.2
+}
+\end{verbatim}
+
+\paragraph{LLM prompt design}
+A structured system prompt guides the model to act as a professional coach:
+``You are an expert fitness coach reviewing a completed workout session... Total response: 120–150 words.''
+
+\paragraph{Output example}
+``Excellent consistency on your 15 push-ups! Your tempo and range of motion were strong throughout...''
+
+\paragraph{Benefits of post-session LLM use}
+\begin{itemize}
+    \item Richer context: full session history enables pattern detection.
+    \item Biomechanical reasoning: LLM can explain why an error matters.
+    \item Progression tracking: compare across sessions to show improvement.
+    \item No latency constraints: 2–3 second generation is acceptable after workout.
+    \item Cost-effective: one API call per session vs. hundreds during exercise.
+\end{itemize}
+
+Session statistics complement the LLM narrative with quantitative metrics: Total repetitions and success ratio, Per-joint error heatmap, Average tempo, range of motion, and phase durations, Personalized deviation parameter $\eta$ adjustments for next session.

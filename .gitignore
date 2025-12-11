@@ -11,3 +11,6 @@
 *.fdb_latexmk
 *.synctex.gz
 *.dvi
+
+# Generated PDF
+*.pdf

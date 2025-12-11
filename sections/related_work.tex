@@ -1,0 +1,28 @@
+\section{Related Work}
+\subsection{Academic Systems}
+Pose Trainer (2020) \cite{chen2020pose} applied rule-based analysis of 2D skeletons from OpenPose \cite{cao2017realtime} to classify push-ups and squats. While effective for offline evaluation, it operates on recorded videos and uses fixed thresholds, providing no real-time correction or personalization.
+
+AIFit (CVPR 2021) \cite{fieraru2021aifit} introduced the Fit3D motion-capture dataset and a 3D feedback model capable of joint-level error localization using a deviation parameter ($\eta$) to control strictness. However, it depends on full-sequence 3D reconstruction (MubyNet) and produces template-based text feedback, making it computationally expensive and less adaptive.
+
+ARFit (IMWUT 2023) \cite{mandic2023arfit} added mobile AR overlays for pose visualization, showing that spatial feedback improves exercise learning. Yet, its thresholds remain generic and it lacks quantitative analytics such as repetition consistency or tempo tracking, focusing mainly on visual guidance.
+
+\subsection{Commercial Applications}
+Apps like Top Pushup \cite{toppushup} and QuickPose \cite{quickpose} popularized real-time repetition counting using smartphone cameras. Their analysis remains binary—labeling repetitions as correct or incorrect—without distinguishing motion quality, tempo stability, or per-joint improvements. They also rely on static thresholds and simple chatbot-style feedback rather than adaptive, natural-language coaching.
+
+\subsection{Gap Summary}
+Across both research and consumer systems, key limitations persist:
+\begin{itemize}
+    \item Offline or delayed feedback (Pose Trainer, AIFit).
+    \item Lack of personalization (global thresholds or $\delta$ not user-specific).
+    \item Shallow analysis (no holistic quality metrics).
+    \item Limited interactivity (no context-aware language feedback).
+\end{itemize}
+
+FitCoachAR addresses these gaps through:
+\begin{itemize}
+    \item Real-time 2D tracking and online calibration.
+    \item Adaptive deviation sensitivity ($\eta$) for user-specific tolerance.
+    \item AR-based spatial feedback.
+    \item LLM-driven natural coaching for motivating, context-aware guidance.
+\end{itemize}
+This integration combines AIFit's interpretability with ARFit's usability, achieving real-time, personalized exercise feedback on consumer hardware.
