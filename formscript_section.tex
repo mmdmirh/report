@@ -1,0 +1,69 @@
+\subsection{FormScript: Interpretable Feedback via FormCodes}
+\label{sec:formscript}
+
+To provide meaningful, explanatory feedback, we implemented ``FormScript'', a rule-based system inspired by the ``PoseScript'' methodology \cite{delmas2022posescript}. While deep learning models can classify good vs. bad form, they often lack interpretability. FormScript solves this by discretizing continuous kinematic concepts into human-readable categories (FormCodes) and then applying logical rules (Super FormCodes) to generate feedback.
+
+\subsubsection{FormCode Categorization}
+Following the taxonomy defined in PoseScript, we implemented low-level logic units called ``FormCodes''. We extended the original static definitions (Angles, Distances) to include dynamic temporal properties required for fitness analysis.
+
+\paragraph{Spatial Relations (Static PoseCodes)}
+These FormCodes analyze the body geometry at key moments (e.g., the bottom of a squat). They are directly adapted from the PoseScript paper's categories:
+
+\begin{itemize}
+    \item \textbf{Angle Codes}: Measure the flexion of joints.
+    \begin{itemize}
+        \item \texttt{squat\_depth} (Squat): Categorizes the knee angle into ``deep'' ($<90^\circ$), ``parallel'' ($90^\circ-110^\circ$), or ``shallow'' ($>110^\circ$).
+        \item \texttt{peak\_flexion} (Bicep Curl): Categorizes elbow angle at top range into ``full contraction'', ``partial'', or ``incomplete''.
+        \item \texttt{wrist\_angle} (Bicep Curl): Detects if wrist is ``neutral'' vs ``flexed/extended''.
+    \end{itemize}
+    
+    \item \textbf{Pitch \& Roll Codes}: Measure the orientation of body parts relative to the vertical axis.
+    \begin{itemize}
+        \item \texttt{torso\_angle} (Squat): Categorizes trunk lean into ``upright'' ($<20^\circ$), ``leaning'', or ``bent over''.
+    \end{itemize}
+
+    \item \textbf{Distance \& Position Codes}: Measure relative positions between joints.
+    \begin{itemize}
+        \item \texttt{stance\_width} (Squat): Categorizes foot distance relative to shoulders (``narrow'', ``shoulder width'', ``wide'').
+        \item \texttt{knee\_forward\_travel} (Squat): Checks z-axis position of knees relative to toes (``over toes'', ``behind toes'').
+        \item \texttt{elbow\_position} (Bicep Curl): Checks x/z-axis drift of elbow relative to torso (``anchored'', ``drift'').
+    \end{itemize}
+\end{itemize}
+
+\paragraph{Temporal Dynamics (Dynamic FormCodes)}
+We extended the PoseScript framework to analyze motion quality over time, which is critical for exercise:
+
+\begin{itemize}
+    \item \textbf{Velocity Codes}: Measure the speed of movement phases.
+    \begin{itemize}
+        \item \texttt{descent\_speed} / \texttt{ascent\_speed} (Squat): ``controlled'', ``fast'', ``dive'', ``explosive''.
+        \item \texttt{lift\_speed} / \texttt{lower\_speed} (Bicep Curl): ``controlled'', ``slow'', ``fast drop''.
+    \end{itemize}
+
+    \item \textbf{Stability \& Deviation Codes}: Measure variance or jerk (shakiness) during movement.
+    \begin{itemize}
+        \item \texttt{knee\_stability} (Squat): Deviation of knees from the feet-hip line (``stable'', ``wobble'').
+        \item \texttt{movement\_smoothness} (Squat): Jerk metric for overall control.
+        \item \texttt{swing\_momentum} (Bicep Curl): Torso movement indicating cheating (``no swing'', ``body swing'').
+        \item \texttt{hip\_shift} (Squat): Symmetry metric for hip levelness.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Super FormCodes: The Rule Engine}
+To generate high-level coaching feedback, we aggregate these elementary FormCodes using logical production rules, termed ``Super FormCodes''. This allows us to define complex errors as combinations of simple states.
+
+\begin{figure}[h]
+    \centering
+    % \includegraphics[width=0.8\textwidth]{placeholder_logic.png}
+    \caption{Logic tree showing how Super FormCodes are derived from elementary FormCodes.}
+    \label{fig:logic}
+\end{figure}
+
+Examples of Production Rules:
+\begin{itemize}
+    \item \textbf{IF} \texttt{squat\_depth} IS ``deep'' \textbf{AND} \texttt{knee\_stability} IS ``stable'' \textbf{THEN} $\rightarrow$ \texttt{Good Rep}
+    \item \textbf{IF} \texttt{torso\_angle} IS ``bent\_over'' \textbf{AND} \texttt{descent\_speed} IS ``dive'' \textbf{THEN} $\rightarrow$ \texttt{Uncontrolled Forward Lean}
+    \item \textbf{IF} \texttt{swing\_momentum} IS ``body\_swing'' \textbf{THEN} $\rightarrow$ \texttt{Cheating Form} (User is using momentum)
+\end{itemize}
+
+This hierarchical approach ensures that the system works like a human coach: first observing specific details (angles, speeds), then synthesizing them into a coherent critique.
