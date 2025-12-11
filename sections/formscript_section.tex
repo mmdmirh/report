@@ -5,7 +5,36 @@ To provide meaningful, explanatory feedback, we implemented ``FormScript'', a ru
 
 \subsubsection{Elementary FormCodes}
 
-Following PoseScript's taxonomy, we define five types of elementary FormCodes. Each FormCode transforms a continuous measurement $v$ (angle in degrees or distance in meters) into a discrete category based on thresholds.
+Following PoseScript's taxonomy, we define five types of elementary FormCodes. Each FormCode transforms a continuous measurement $v$ (angle in degrees or distance in meters) into a discrete category based on thresholds. Figure~\ref{fig:formscript-pipeline} illustrates the overall pipeline.
+
+% Block diagram: FormScript Pipeline
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    block/.style={rectangle, draw, fill=blue!20, text width=2.2cm, text centered, rounded corners, minimum height=1cm},
+    arrow/.style={thick,->,>=stealth}
+]
+% Nodes
+\node[block] (video) {Video Frames};
+\node[block, right=of video] (pose) {Pose Estimation};
+\node[block, right=of pose, fill=red!30] (formcodes) {FormCodes};
+\node[block, right=of formcodes, fill=red!30] (super) {Super FormCodes};
+\node[block, right=of super] (analyzer) {Form Analyzer};
+\node[block, below=0.8cm of analyzer] (llm) {LLM};
+\node[block, left=of llm] (feedback) {Feedback};
+
+% Arrows
+\draw[arrow] (video) -- (pose);
+\draw[arrow] (pose) -- (formcodes);
+\draw[arrow] (formcodes) -- (super);
+\draw[arrow] (super) -- (analyzer);
+\draw[arrow] (analyzer) -- (llm);
+\draw[arrow] (llm) -- (feedback);
+\end{tikzpicture}
+\caption{FormScript pipeline: video frames are processed through pose estimation, discretized into FormCodes, aggregated into Super FormCodes, analyzed, and converted to natural language feedback via LLM.}
+\label{fig:formscript-pipeline}
+\end{figure}
 
 \paragraph{Angle FormCodes}
 Measure joint flexion at key moments during exercise.
