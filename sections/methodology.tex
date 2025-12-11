@@ -40,43 +40,424 @@ A manually set critic parameter $\delta$ determines grading bands:
 
 Repetition-level and session-level scores aggregate these joint/phase grades to summarize overall performance.
 
-\subsection{Real-Time Visual and Rule-Based Feedback}
-To maintain sub-100 ms latency during exercise, real-time feedback uses deterministic rule-based templates combined with AR visualization:
+\subsection{FormScript: Interpretable Feedback via FormCodes}
+\label{sec:formscript}
+
+To provide meaningful, explanatory feedback, we implemented ``FormScript'', a rule-based system inspired by the ``PoseScript'' methodology \cite{delmas2022posescript}. The core problem is that simple rep counters don't tell users \textit{how} to improve---users need to know \textit{why} a rep was good or bad. FormScript solves this by discretizing continuous kinematic measurements into human-readable categories (FormCodes) and then applying logical production rules (Super FormCodes) to generate actionable feedback.
+
+\subsubsection{Elementary FormCodes}
+
+Following PoseScript's taxonomy, we define five types of elementary FormCodes. Each FormCode transforms a continuous measurement $v$ into a discrete category based on thresholds. Figure~\ref{fig:formscript-pipeline} illustrates the overall pipeline.
+
+% Block diagram: FormScript Pipeline
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    block/.style={rectangle, draw, fill=blue!20, text width=2.2cm, text centered, rounded corners, minimum height=1cm},
+    arrow/.style={thick,->,>=stealth}
+]
+% Nodes
+\node[block] (video) {Video Frames};
+\node[block, right=of video] (pose) {Pose Estimation};
+\node[block, right=of pose, fill=red!30] (formcodes) {FormCodes};
+\node[block, right=of formcodes, fill=red!30] (super) {Super FormCodes};
+\node[block, right=of super] (analyzer) {Form Analyzer};
+\node[block, below=0.8cm of analyzer] (llm) {LLM};
+\node[block, left=of llm] (feedback) {Feedback};
+
+% Arrows
+\draw[arrow] (video) -- (pose);
+\draw[arrow] (pose) -- (formcodes);
+\draw[arrow] (formcodes) -- (super);
+\draw[arrow] (super) -- (analyzer);
+\draw[arrow] (analyzer) -- (llm);
+\draw[arrow] (llm) -- (feedback);
+\end{tikzpicture}
+\caption{FormScript pipeline: video frames are processed through pose estimation, discretized into FormCodes, aggregated into Super FormCodes, analyzed, and converted to natural language feedback via LLM.}
+\label{fig:formscript-pipeline}
+\end{figure}
+
+We categorize FormCodes into two groups based on their nature:
+
 \begin{itemize}
-    \item Template-based corrections: pre-defined feedback phrases mapped to specific error conditions (e.g., ``Lower your hips'' when pelvis deviation exceeds a threshold).
-    \item AR overlay: skeleton lines, target ``shadow'' poses, arrows toward ideal joint positions, and colored angle sectors (green = within band, red = error).
-    \item Audio cues (optional): brief beeps or spoken keywords for critical errors during high-intensity phases.
+    \item \textbf{Static FormCodes}: Evaluate body geometry (angles, distances, relative positions) on individual frames. While usually assessed at key moments for scoring (e.g., bottom of a squat), they can also be monitored continuously to detect persistent errors.
+    \item \textbf{Dynamic FormCodes}: Evaluate motion quality over time (velocity, acceleration, stability) across a sequence of frames.
 \end{itemize}
-This approach ensures immediate, actionable feedback without network or computation delays, keeping users engaged in the flow state of exercise.
 
-\subsection{LLM-Driven Post-Session Analysis and Summary}
-After completing a workout session, accumulated performance data is processed by a Large Language Model to generate comprehensive, personalized coaching feedback.
+% Block diagram: FormCodes Hierarchy
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+    node distance=1cm and 0.2cm,
+    block/.style={rectangle, draw, text width=1.5cm, text centered, rounded corners, minimum height=0.6cm, font=\footnotesize},
+    arrow/.style={thick,->,>=stealth}
+]
+% Top level
+\node[block, fill=blue!20] (formcodes) {FormCodes};
 
-\paragraph{Input construction}
-Each session produces a detailed record such as:
+% Second level
+\node[block, fill=green!25, below left=1.2cm and 3cm of formcodes] (static) {Static};
+\node[block, fill=orange!35, below right=1.2cm and 3cm of formcodes] (dynamic) {Dynamic};
+
+% Static children (4 types)
+\node[block, below=1.2cm of static, xshift=-1.5cm, fill=green!10] (angle) {Angle};
+\node[block, right=0.1cm of angle, fill=green!10] (pitchroll) {Pitch/Roll};
+\node[block, right=0.1cm of pitchroll, fill=green!10] (distance) {Distance};
+\node[block, right=0.1cm of distance, fill=green!10] (relpos) {Rel. Pos.};
+
+% Dynamic children (5 types)
+\node[block, below=1.2cm of dynamic, xshift=-2cm, fill=orange!15] (velocity) {Velocity};
+\node[block, right=0.1cm of velocity, fill=orange!15] (jerk) {Jerk};
+\node[block, right=0.1cm of jerk, fill=orange!15] (deviation) {Deviation};
+\node[block, right=0.1cm of deviation, fill=orange!15] (symmetry) {Symmetry};
+\node[block, right=0.1cm of symmetry, fill=orange!15] (duration) {Duration};
+
+% Arrows - top to second level
+\draw[arrow] (formcodes.south) -- ++(0,-0.4) -| (static.north);
+\draw[arrow] (formcodes.south) -- ++(0,-0.4) -| (dynamic.north);
+
+% Arrows - Static to children
+\draw[arrow] (static.south) -- ++(0,-0.4) -| (angle.north);
+\draw[arrow] (static.south) -- ++(0,-0.4) -| (pitchroll.north);
+\draw[arrow] (static.south) -- ++(0,-0.4) -| (distance.north);
+\draw[arrow] (static.south) -- ++(0,-0.4) -| (relpos.north);
+
+% Arrows - Dynamic to children
+\draw[arrow] (dynamic.south) -- ++(0,-0.4) -| (velocity.north);
+\draw[arrow] (dynamic.south) -- ++(0,-0.4) -| (jerk.north);
+\draw[arrow] (dynamic.south) -- ++(0,-0.4) -| (deviation.north);
+\draw[arrow] (dynamic.south) -- ++(0,-0.4) -| (symmetry.north);
+\draw[arrow] (dynamic.south) -- ++(0,-0.4) -| (duration.north);
+\end{tikzpicture}
+\caption{FormCode hierarchy: Static (4 types) for spatial geometry; Dynamic (5 types) for temporal motion quality.}
+\label{fig:formcode-taxonomy}
+\end{figure}
+
+\paragraph{Static FormCodes}
+
+Static FormCodes analyze body geometry based on individual frames. While some are checked continuously (e.g., torso lean), others are critical at specific key moments (e.g., squat depth). They are adapted from PoseScript's posecode categories.
+
+\subparagraph{Angle FormCodes}
+Measure joint flexion at key moments during exercise.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+completely bent & $v \pm 5 \leq 45$ & L/R-knee, L/R-elbow \\
+almost completely bent & $45 < v \pm 5 \leq 75$ & L/R-knee, L/R-elbow \\
+bent at right angle & $75 < v \pm 5 \leq 105$ & L/R-knee, L/R-elbow \\
+partially bent & $105 < v \pm 5 \leq 135$ & L/R-knee, L/R-elbow \\
+slightly bent & $135 < v \pm 5 \leq 160$ & L/R-knee, L/R-elbow \\
+straight & $v \pm 5 > 160$ & L/R-knee, L/R-elbow \\
+\hline
+\end{tabular}
+\caption{Angle FormCode categorizations with noise tolerance $\pm 5^\circ$.}
+\label{tab:angle-formcodes}
+\end{table}
+
+\paragraph{Distance FormCodes}
+Measure relative spacing between body parts.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition (m)} & \textbf{Applied To} \\
+\hline
+close & $v \pm 0.05 \leq 0.20$ & L/R-elbow vs. torso \\
+shoulder width & $0.20 < v \pm 0.05 \leq 0.40$ & L/R-foot, L/R-hand \\
+spread & $0.40 < v \pm 0.05 \leq 0.80$ & L/R-knee, L/R-foot \\
+wide & $v \pm 0.05 > 0.80$ & L/R-foot stance \\
+\hline
+\end{tabular}
+\caption{Distance FormCode categorizations.}
+\label{tab:distance-formcodes}
+\end{table}
+
+\paragraph{Relative Position FormCodes}
+Measure spatial relationships between joints along X, Y, and Z axes.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Axis} & \textbf{Categorization} & \textbf{Condition} \\
+\hline
+X (lateral) & at the right of / x-ignored / at the left of & $v \pm 0.05 \lessgtr \pm 0.15$ \\
+Y (vertical) & below / y-ignored / above & $v \pm 0.05 \lessgtr \pm 0.15$ \\
+Z (depth) & behind / z-ignored / in front of & $v \pm 0.05 \lessgtr \pm 0.15$ \\
+\hline
+\end{tabular}
+\caption{Relative position FormCode categorizations along each axis.}
+\label{tab:relpos-formcodes}
+\end{table}
+
+\paragraph{Pitch \& Roll FormCodes}
+Measure body segment orientation relative to vertical.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+vertical (upright) & $v \pm 5 \leq 10$ & torso, pelvis \\
+ignored (leaning) & $10 < v \pm 5 \leq 80$ & torso, pelvis \\
+horizontal (bent over) & $v \pm 5 > 80$ & torso, pelvis \\
+\hline
+\end{tabular}
+\caption{Pitch \& roll FormCode categorizations.}
+\label{tab:pitchroll-formcodes}
+\end{table}
+
+\paragraph{Ground-Contact FormCodes}
+Detect whether body parts are in contact with the ground.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition (m)} & \textbf{Applied To} \\
+\hline
+on the ground & $v \pm 0.05 \leq 0.10$ & L/R-knee, L/R-foot \\
+ground-ignored & $v \pm 0.05 > 0.10$ & L/R-knee, L/R-foot \\
+\hline
+\end{tabular}
+\caption{Ground-contact FormCode categorizations.}
+\label{tab:ground-formcodes}
+\end{table}
+
+\paragraph{Dynamic FormCodes}
+
+Dynamic FormCodes extend PoseScript's static approach to analyze motion quality over time, which is critical for exercise evaluation. We define five Dynamic FormCode types.
+
+\subparagraph{Velocity FormCodes}
+Measure the speed of movement phases (descent, ascent, lift, lower).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+controlled & $v \leq 0.5$ m/s & descent\_speed, ascent\_speed \\
+fast & $0.5 < v \leq 1.0$ m/s & descent\_speed, ascent\_speed \\
+dive/explosive & $v > 1.0$ m/s & descent\_speed, ascent\_speed \\
+\hline
+\end{tabular}
+\caption{Velocity FormCode categorizations.}
+\label{tab:velocity-formcodes}
+\end{table}
+
+\subparagraph{Jerk FormCodes}
+Measure smoothness via rate of acceleration change.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+smooth & jerk $\leq 2.5$ m/s$^3$ & movement\_smoothness \\
+shaky & $2.5 <$ jerk $\leq 5.0$ m/s$^3$ & movement\_smoothness \\
+unstable & jerk $> 5.0$ m/s$^3$ & movement\_smoothness \\
+\hline
+\end{tabular}
+\caption{Jerk FormCode categorizations.}
+\label{tab:jerk-formcodes}
+\end{table}
+
+\subparagraph{Deviation FormCodes}
+Measure maximum deviation from expected path or position.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+stable & $v \leq 0.05$ m & knee\_stability, path\_arc \\
+slight\_wobble & $0.05 < v \leq 0.1$ m & knee\_stability, path\_arc \\
+unstable & $v > 0.1$ m & knee\_stability, path\_arc \\
+\hline
+\end{tabular}
+\caption{Deviation FormCode categorizations.}
+\label{tab:deviation-formcodes}
+\end{table}
+
+\subparagraph{Symmetry FormCodes}
+Measure left-right asymmetry during movement.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+level & $v \leq 0.03$ m & hip\_shift \\
+slight\_shift & $0.03 < v \leq 0.07$ m & hip\_shift \\
+major\_shift & $v > 0.07$ m & hip\_shift \\
+\hline
+\end{tabular}
+\caption{Symmetry FormCode categorizations.}
+\label{tab:symmetry-formcodes}
+\end{table}
+
+\subparagraph{Duration FormCodes}
+Measure time spent in specific positions.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+squeeze & $t \geq 0.5$ s & pause\_at\_top \\
+touch\_and\_go & $t < 0.5$ s & pause\_at\_top \\
+\hline
+\end{tabular}
+\caption{Duration FormCode categorizations.}
+\label{tab:duration-formcodes}
+\end{table}
+
+\subsubsection{Super FormCodes: Production Rules}
+
+Super FormCodes aggregate multiple elementary FormCodes using logical production rules. Each Super FormCode defines a high-level body configuration by combining conditions with AND/OR operators.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Subject} & \textbf{Configuration} & \textbf{Production Rule} \\
+\hline
+torso & upright & pitch \& roll (pelvis, L-shoulder) = vertical AND pitch \& roll (pelvis, R-shoulder) = vertical \\
+\hline
+body & bent forward & relativePos Y (L-ankle, neck) = below AND relativePos Z (neck, pelvis) = front \\
+\hline
+knees & deep squat & angle (L-knee) = completely bent AND angle (R-knee) = completely bent \\
+\hline
+knees & parallel squat & angle (L-knee) = bent at right angle AND angle (R-knee) = bent at right angle \\
+\hline
+knees & stable & distance (L-knee, L-foot) = close AND distance (R-knee, R-foot) = close \\
+\hline
+knees & collapsed & relativePos X (L-knee, L-foot) = at right of OR relativePos X (R-knee, R-foot) = at left of \\
+\hline
+elbows & anchored & distance (L-elbow, torso) = close AND distance (R-elbow, torso) = close \\
+\hline
+elbows & drifting & distance (L-elbow, torso) = spread OR distance (R-elbow, torso) = spread \\
+\hline
+feet & shoulder width & distance (L-foot, R-foot) = shoulder width AND pitch \& roll (L-foot, R-foot) = horizontal \\
+\hline
+\end{tabular}
+\caption{Super FormCode production rules for exercise analysis.}
+\label{tab:super-formcodes}
+\end{table}
+
+\subsubsection{Exercise-Specific FormCode Application}
+
+\paragraph{Squat Analysis}
+Key FormCodes monitored: knee angle (depth), torso pitch (lean), knee-to-foot distance (stability), hip levelness (asymmetry).
+
+\paragraph{Bicep Curl Analysis}
+Key FormCodes monitored: elbow angle (contraction), elbow-to-torso distance (anchoring), shoulder/hip pitch (swing detection), wrist angle (neutral grip).
+
+\subsubsection{Configuration-Driven Definition}
+
+A key strength of the FormScript framework is its extensibility. Rather than hard-coding rules, all FormCodes and Super FormCodes are defined in external configuration files, making it easy for domain experts (e.g., physiotherapists) to adjust thresholds or add new exercises without modifying the core codebase.
+
+\paragraph{Elementary Configuration}
+The \texttt{form\_codes\_config.py} file defines the primitives for each exercise. Each entry specifies the measurement type, units, and strict categorization thresholds. For example, the configuration for squat depth is defined as:
+
 \begin{verbatim}
-{
-  "exercise": "push_up",
-  "total_reps": 15,
-...
-  "critic_level": 0.2
+"squat_depth": {
+    "type": "angle",
+    "description": "Angle of the knee joint...",
+    "categories": [
+        {"name": "deep", "v_max": 90},
+        {"name": "parallel", "v_min": 90, "v_max": 110},
+        {"name": "shallow", "v_min": 110}
+    ]
 }
 \end{verbatim}
 
-\paragraph{LLM prompt design}
-A structured system prompt guides the model to act as a professional coach:
-``You are an expert fitness coach reviewing a completed workout session... Total response: 120–150 words.''
+\paragraph{Production Rule Configuration}
+The \texttt{super\_form\_codes\_config.py} file defines high-level states using logical rules. These rules specify which elementary FormCode categories must be present (\texttt{must\_be}) or absent (\texttt{must\_not\_be}).
 
-\paragraph{Output example}
-``Excellent consistency on your 15 push-ups! Your tempo and range of motion were strong throughout...''
+\begin{verbatim}
+"GOOD_REP": {
+    "description": "A well-executed squat...",
+    "rules": [
+        {"form_code": "squat_depth", "must_be": ["deep"]},
+        {"form_code": "knee_stability", 
+         "must_not_be": ["unstable", "slight_wobble"]},
+        {"form_code": "torso_angle", 
+         "must_not_be": ["bent_over", "leaning"]}
+    ]
+}
+\end{verbatim}
 
-\paragraph{Benefits of post-session LLM use}
-\begin{itemize}
-    \item Richer context: full session history enables pattern detection.
-    \item Biomechanical reasoning: LLM can explain why an error matters.
-    \item Progression tracking: compare across sessions to show improvement.
-    \item No latency constraints: 2–3 second generation is acceptable after workout.
-    \item Cost-effective: one API call per session vs. hundreds during exercise.
-\end{itemize}
+This data-driven approach decouples the biomechanical definitions from the pose estimation logic, similar to the PoseScript architecture \cite{delmas2022posescript}.
 
-Session statistics complement the LLM narrative with quantitative metrics: Total repetitions and success ratio, Per-joint error heatmap, Average tempo, range of motion, and phase durations, Personalized deviation parameter $\eta$ adjustments for next session.
+\subsubsection{Feedback Systems}
+
+The FormScript pipeline feeds into two complementary feedback paths: real-time coaching during exercise and offline analysis after workout completion.
+
+\paragraph{Real-Time Feedback}
+During exercise, feedback must maintain sub-100ms latency. The system provides:
+
+\begin{enumerate}
+    \item \textbf{Post-Rep Commands}: After each repetition, Super FormCodes are mapped to concise coaching commands. For example:
+    \begin{itemize}
+        \item BODY\_SWING $\rightarrow$ ``No swinging! Use your bicep only.''
+        \item ELBOW\_DRIFT $\rightarrow$ ``Pin your elbow to your side!''
+        \item SHALLOW\_SQUAT $\rightarrow$ ``Go deeper!''
+        \item KNEE\_CAVE $\rightarrow$ ``Knees out!''
+    \end{itemize}
+    
+    \item \textbf{Guidance Arrows}: Visual AR overlays on the skeleton showing direction of correction:
+    \begin{itemize}
+        \item Arrow on wrist pointing up for INCOMPLETE\_RANGE
+        \item Arrow on knee pointing outward for KNEE\_CAVE
+        \item Arrow on hip pointing down for SHALLOW\_SQUAT
+    \end{itemize}
+    
+    \item \textbf{Joint Highlighting}: Problematic joints are highlighted in red on the skeleton overlay.
+\end{enumerate}
+
+\paragraph{Offline Feedback (Post-Workout)}
+After the workout session, accumulated FormCode data from all repetitions is processed for comprehensive analysis:
+
+\begin{enumerate}
+    \item \textbf{Per-Rep Feedback Generation}: Each repetition's FormCodes are converted to human-readable sentences. For example:
+    \begin{itemize}
+        \item peak\_flexion = full\_contraction $\rightarrow$ ``You achieved a full muscle contraction at the top of the curl.''
+        \item swing\_momentum = body\_swing $\rightarrow$ ``Significant body swing detected---you're using momentum instead of muscle.''
+    \end{itemize}
+    
+    \item \textbf{LLM-Powered Session Summary}: All repetition data is aggregated and sent to an LLM (Llama 3.3 70B via Cerebras) to generate a natural language summary:
+    \begin{itemize}
+        \item Total reps and form score
+        \item Most common issues with actionable tips
+        \item Encouraging motivation for next session
+    \end{itemize}
+    
+    \item \textbf{Q\&A Capability}: Users can ask follow-up questions about their workout (e.g., ``How was my elbow position?'') and receive personalized responses based on their session data.
+\end{enumerate}
+
+This dual-path approach ensures users receive immediate, actionable feedback during exercise while benefiting from comprehensive LLM-generated insights after workout completion.
+

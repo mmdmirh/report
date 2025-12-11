@@ -9,6 +9,9 @@ ARFit (IMWUT 2023) \cite{mandic2023arfit} added mobile AR overlays for pose visu
 \subsection{Commercial Applications}
 Apps like Top Pushup \cite{toppushup} and QuickPose \cite{quickpose} popularized real-time repetition counting using smartphone cameras. Their analysis remains binary—labeling repetitions as correct or incorrect—without distinguishing motion quality, tempo stability, or per-joint improvements. They also rely on static thresholds and simple chatbot-style feedback rather than adaptive, natural-language coaching.
 
+\subsection{Semantic Pose Representation}
+Recent work in computer vision has sought to bridge the gap between geometric pose data and natural language. PoseScript \cite{delmas2022posescript} introduced the concept of "posecodes"—atomic, rule-based boolean descriptors extracted from 3D keypoints—to generate synthetic textual descriptions of static human poses. Our system adopts a nearly identical architectural strategy, defining "FormCodes" as the semantic intermediate layer. However, while PoseScript focuses on static pose captioning, FitCoachAR extends this methodology to dynamic, temporal motion analysis, using these atomic codes to drive real-time coaching feedback.
+
 \subsection{Gap Summary}
 Across both research and consumer systems, key limitations persist:
 \begin{itemize}

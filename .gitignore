@@ -14,3 +14,9 @@
 
 # Generated PDF
 *.pdf
+
+# Project code reference (not for version control)
+FitCoachAR/
+
+
+.DS_Store
