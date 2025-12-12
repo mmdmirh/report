@@ -25,7 +25,7 @@ Figure~\ref{fig:system_overview} presents the system architecture. The user inte
 
 % Arrows - top row
 \draw[arrow] (user) -- (ui);
-\draw[arrow] (ui) -- (feedback);
+\draw[arrow] (ui) -- node[above,font=\scriptsize]{LLM prompt} (feedback);
 \draw[arrow] (feedback) -- ++(0,0.8) -| node[pos=0.25,above,font=\scriptsize]{display} (ui);
 
 % Arrows - UI to processing
