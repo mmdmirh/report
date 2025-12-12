@@ -1,0 +1,23 @@
+\subsection{Biases and Limitations in Model Comparison and Post-Processing Evaluation}
+
+While the proposed post-processing approach demonstrates strong robustness--latency trade-offs
+for real-time fitness coaching, several limitations should be acknowledged.
+First, our evaluation projects both ground-truth 3D joints and predictions from
+3D-based models into a normalized 2D torso-centric plane to enable fair comparison
+with 2D pose estimators.
+Although this design removes viewpoint bias, it may also suppress the inherent
+depth advantages of true 3D models, potentially underestimating their full capability.
+Second, discrepancies in joint definitions across datasets and models introduce
+additional uncertainty: ground-truth annotations are derived from sensor-based
+motion-capture systems, whose joint semantics do not perfectly align with those of
+learning-based 2D estimators such as MoveNet, MediaPipe, or ROMP.
+
+Third, the four proposed post-processing techniques were evaluated as a combined
+pipeline, without a dedicated ablation study to isolate the individual contribution
+of each component.
+While this choice reflects our system-oriented focus on end-to-end performance,
+it limits fine-grained attribution of improvements.
+Finally, the high dimensionality of pose data—spanning multiple joints, frames,
+viewpoints, and exercises—was summarized using global metrics.
+Such aggregation may obscure phase-specific or viewpoint-specific behaviors,
+particularly for exercises where joint dynamics vary substantially across motion phases.

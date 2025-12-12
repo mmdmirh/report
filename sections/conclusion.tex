@@ -1,0 +1,26 @@
+\section{Conclusion}
+
+This project presented \textbf{FitCoachAR}, a real-time, adaptive exercise coaching system that bridges the gap between academic pose-analysis pipelines and practical consumer fitness applications.
+
+Through a comprehensive empirical evaluation, we showed that among a wide range of pose estimation backends,
+\textbf{MoveNet\_2D} offers the most favorable accuracy--latency trade-off for real-time use.
+More importantly, our four-step post-processing pipeline—body-centric canonicalization,
+yaw compensation, confidence-/motion-adaptive temporal smoothing, and anatomical consistency projection—
+substantially improves both joint-angle accuracy and cross-view stability without increasing inference latency.
+
+Beyond low-level pose accuracy, FitCoachAR introduces \textbf{FormScript}, a semantic intermediate representation that transforms continuous pose measurements into interpretable FormCodes.
+This abstraction enables exercise-specific reasoning, personalized calibration, and natural-language feedback,
+supporting both real-time corrective cues and post-workout summaries.
+By decoupling biomechanical definitions from pose estimation and feedback generation,
+FormScript provides a flexible and extensible framework for future exercise analysis systems.
+
+Overall, FitCoachAR illustrates a practical design philosophy for interactive human-motion applications:
+prioritizing robustness, interpretability, and responsiveness over raw model complexity.
+While several limitations remain—including the lack of ablation analysis and the reliance on aggregated metrics—
+the results suggest that integrated, lightweight post-processing can significantly narrow the gap
+between small 2D models and heavier 3D approaches in real-world fitness coaching scenarios.
+
+Future work may explore finer-grained phase-specific evaluation, user studies on coaching effectiveness,
+and the extension of FormCodes to rehabilitation and clinical movement assessment.
+Nonetheless, this project demonstrates that real-time, personalized, and explainable exercise coaching
+is achievable on consumer hardware using principled pose processing and semantic reasoning.

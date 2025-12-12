@@ -146,8 +146,18 @@ surrounding the subject.
 Table~\ref{tab:backend-results} highlights the trade-off between accuracy and latency.
 Among lightweight models, \textbf{MoveNet\_2D} provides the best balance between accuracy and inference speed.
 With our post-processing, \textbf{MoveNet\_ours} significantly reduces joint-angle and joint-distance errors while preserving the same inference time.
-We further observe that 2D-to-3D lifting pipelines (HRNet+VideoPose and HRNet+MotionBERT) perform worse than HRNet alone, likely due to overfitting to motion patterns in their training datasets that differ from strength-training exercises.
-In contrast, monocular 3D pose estimation models and heavier 2D-based models achieve high accuracy but suffer from prohibitive latency, making them unsuitable for real-time feedback scenarios.
+
+We observe that the \textbf{joint distance error} remains relatively similar across most baseline models (approximately $0.20$ after torso normalization),
+suggesting that raw joint distances are less sensitive to model choice than angular metrics.
+In contrast, our post-processing reduces this error substantially to around $0.10$,
+which can be attributed to body-centric canonicalization and anatomical consistency projection that explicitly regularize inter-joint geometry under viewpoint changes.
+This result indicates that lightweight geometric normalization can be more effective than heavier model architectures for stabilizing distance-based kinematic features.
+
+We further observe that 2D-to-3D lifting pipelines (HRNet+VideoPose and HRNet+MotionBERT) perform worse than HRNet alone,
+likely due to overfitting to motion patterns in their training datasets that differ from strength-training exercises
+and the sensitivity of temporal lifters to window length and viewpoint mismatch.
+In contrast, monocular 3D pose estimation models and heavier 2D-based models achieve high accuracy
+but suffer from prohibitive latency, making them unsuitable for real-time feedback scenarios.
 
 \subsubsection{Custom Multi-view Dataset Results}
 
@@ -203,12 +213,13 @@ Results are shown before (MoveNet\_raw) and after our post-processing
 \label{tab:movenet_ours_std}
 \end{table}
 
-As shown in Table~\ref{tab:movenet_ours_std},
-our post-processing consistently reduces variance across viewpoints
-for both joint angles and distances.
-Improvements are particularly evident for side-view–sensitive joints
-such as elbows and knees, indicating increased robustness to
-foreshortening and partial occlusion.
+As shown in Table~\ref{tab:movenet_ours_std}, our post-processing consistently reduces variance across viewpoints
+for both joint angles and normalized joint distances on the custom multi-view dataset.
+Notably, joints that are most critical to exercise evaluation—such as knee angles in squats
+and elbow angles in bicep curls and push-ups—exhibit higher baseline variance across viewpoints,
+reflecting their sensitivity to foreshortening and partial self-occlusion.
+Our method significantly stabilizes these exercise-specific features,
+indicating improved robustness for practical, in-the-wild fitness coaching.
 
 \paragraph{Summary.}
 Taken together, these results show that a carefully designed lightweight
