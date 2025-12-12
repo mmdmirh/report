@@ -18,9 +18,9 @@ Moreover, these systems rely on static, population-level thresholds and simple c
 \subsection{Pose Stabilization for Real-Time Monocular Systems}
 Lightweight pose estimation in monocular RGB videos is known to be sensitive to viewpoint changes,
 temporal jitter, and anatomically implausible keypoint distortions.
-Prior work has explored \textbf{body-centric canonicalization} to reduce scale and orientation variance by normalizing poses to a canonical reference frame (e.g.,~\cite{shotton2013kinect}),
+Prior work has explored \textbf{body-centric canonicalization} to reduce scale and orientation variance by normalizing poses to a canonical reference frame (e.g.,~\cite{tang2022gait}),
 \textbf{temporal smoothing} to suppress frame-to-frame keypoint noise in interactive systems (e.g., One Euro filter~\cite{casiez2012oneeuro} and Kalman filtering~\cite{welch2006kalman}),
-and \textbf{anatomical constraints} to enforce physically plausible limb configurations and reduce ``rubber-limb'' artifacts (e.g.,~\cite{akhter2015pose}).
+and \textbf{anatomical constraints} to enforce physically plausible limb configurations and reduce ``rubber-limb'' artifacts (e.g.,~\cite{hsu2024accv, chen2021anatomy}).
 However, these techniques are often studied in isolation, tuned for specific sensing setups (e.g., depth sensors or calibrated rigs),
 or evaluated outside real-time fitness coaching scenarios.
 FitCoachAR adapts and integrates these principles into a unified, per-frame post-processing pipeline that operates purely on 2D keypoints
@@ -34,20 +34,45 @@ However, while PoseScript focuses on static pose captioning, our system extends 
 
 
 \subsection{Gap Summary}
-Across both academic and commercial systems, several limitations remain:
+Despite substantial progress in both academic research and commercial products,
+several important gaps remain across the full exercise-coaching pipeline.
+
 \begin{itemize}
-    \item \textbf{Offline or delayed feedback} (Pose Trainer, AIFit).
-    \item \textbf{Limited personalization}, with global thresholds or non-user-specific deviation parameters.
-    \item \textbf{Shallow analysis}, lacking holistic metrics such as repetition quality, tempo stability, and joint-wise consistency.
-    \item \textbf{Limited interactivity}, with little integration of context-aware, natural-language feedback.
+    \item \textbf{Lack of real-time, fine-grained feedback.}
+    Many academic systems operate offline on recorded videos
+    (e.g., Pose Trainer, AIFit),
+    while commercial apps focus primarily on repetition counting
+    with coarse, binary correctness labels.
+
+    \item \textbf{Limited robustness to viewpoint and scale variation.}
+    Most existing systems rely directly on raw 2D or reconstructed 3D poses,
+    which are sensitive to camera placement, user orientation,
+    and foreshortening effects in monocular RGB videos.
+    Techniques such as body-centric normalization, temporal smoothing,
+    and anatomical constraints are rarely integrated into real-time fitness applications.
+
+    \item \textbf{Insufficient stability--responsiveness trade-off.}
+    While temporal filters and anatomical priors have been studied in isolation,
+    they are often tuned for offline analysis or specialized sensors,
+    rather than interactive systems where low latency and visual smoothness
+    must be jointly optimized.
+
+    \item \textbf{Shallow semantic abstraction.}
+    Existing approaches typically map low-level pose measurements
+    directly to fixed rules or template messages,
+    lacking an intermediate, interpretable representation that can support
+    nuanced feedback, temporal reasoning, and natural-language coaching.
 \end{itemize}
 
-\textbf{FitCoachAR} addresses these gaps through:
+\textbf{FitCoachAR} addresses these gaps by combining:
 \begin{itemize}
-    \item Real-time 2D pose tracking with online processing,
-    \item Adaptive deviation sensitivity ($\eta$) for user-specific tolerance,
-    \item AR-based spatial feedback for intuitive correction, and
-    \item LLM-driven natural coaching for motivating, context-aware guidance.
+    \item real-time 2D pose tracking with lightweight, per-frame post-processing
+          for viewpoint robustness and anatomical consistency,
+    \item adaptive deviation sensitivity ($\eta$) for user-specific tolerance,
+    \item AR-based spatial feedback for intuitive, in-situ correction, and
+    \item a semantic pose representation (\emph{FormCodes}) that bridges
+          geometric analysis and LLM-driven coaching.
 \end{itemize}
 
-By integrating interpretable pose analysis from AIFit with the usability of mobile AR systems, FitCoachAR enables real-time, personalized exercise coaching on consumer-grade hardware.
+This unified design enables stable, interpretable, and interactive exercise feedback
+on consumer-grade hardware, bridging low-level pose processing and high-level coaching intelligence.
