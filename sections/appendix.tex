@@ -212,3 +212,90 @@ touch\_and\_go & $t < 0.5$ s & pause\_at\_top \\
 \hline
 \end{tabular}
 \end{table}
+
+\section{LLM Prompt Structure}
+\label{appendix:llm-prompt}
+
+This appendix documents the data sent to the LLM (Llama 3.3 70B via Cerebras) for generating post-workout summaries.
+
+\subsection{Prompt Components}
+
+The LLM receives two components:
+
+\paragraph{System Prompt}
+Defines the AI's role and output requirements:
+\begin{verbatim}
+You are a friendly and encouraging fitness coach 
+summarizing a workout session. You have detailed 
+form analysis data including a form score, good reps 
+count, and specific issues detected.
+
+Provide a concise summary (3-4 sentences) that:
+1. Opens with positive acknowledgment of their effort
+2. Mentions total reps and the FORM SCORE
+3. If there are issues, mention the most common one 
+   as a constructive tip
+4. Ends with motivation for their next session
+\end{verbatim}
+
+\paragraph{User Prompt}
+Contains the workout data in a structured format:
+\begin{itemize}
+    \item \textbf{Exercise name} and rep counts (total, good)
+    \item \textbf{Form score} as a percentage
+    \item \textbf{Top issues} with Super FormCode names and descriptions
+    \item \textbf{Per-rep feedback sentences} for all repetitions
+\end{itemize}
+
+\subsection{Example Request}
+
+The following shows an actual LLM request from a 5-rep bicep curl session:
+
+\begin{verbatim}
+{
+  "timestamp": "2025-12-12T14:42:58",
+  "request_type": "session_summary",
+  "user_prompt": "
+    Workout: bicep_curls
+    Total Reps: 5
+    Good Reps: 1
+    Form Score: 20%
+    
+    Top Issues Detected:
+    BODY SWING: The user used their back and 
+      shoulders to lift the weight.
+    
+    Per-Rep Feedback:
+    Rep 1: You achieved a full muscle contraction 
+      at the top of the curl.; Your elbow stayed 
+      stable by your side - excellent form!; 
+      The lift was explosive...; There was slight 
+      body movement during the curl.
+    Rep 2: You achieved a full muscle contraction...;
+      Significant body swing detected - you're using
+      momentum instead of muscle.
+    Rep 3: [similar feedback sentences]
+    Rep 4: [similar feedback sentences]
+    Rep 5: You achieved a full muscle contraction...;
+      The lifting speed was well-controlled.;
+      Significant body swing detected...
+  ",
+  "response": "Great job pushing through those bicep 
+    curls - I can tell you gave it your all! You 
+    completed 5 reps with a form score of 20%, 
+    indicating there's room for improvement in 
+    your technique. One area to focus on for next 
+    time is reducing body swing..."
+}
+\end{verbatim}
+
+\subsection{Design Rationale}
+
+Including all per-rep FormScript sentences provides the LLM with:
+\begin{enumerate}
+    \item \textbf{Rep-by-rep progression}: The LLM can observe if form improved or degraded over the session.
+    \item \textbf{Richer context}: Enables more personalized summaries that reference specific patterns.
+    \item \textbf{Consistency}: The LLM summary aligns with the detailed per-rep feedback the user already saw.
+\end{enumerate}
+
+All LLM requests are logged to \texttt{llm\_logs/} for debugging and analysis.

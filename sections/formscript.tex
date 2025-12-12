@@ -201,35 +201,42 @@ Key FormCodes monitored: elbow angle (contraction), elbow-to-torso distance (anc
 A key strength of the FormScript framework is its extensibility. Rather than hard-coding rules, all FormCodes and Super FormCodes are defined in external configuration files, making it easy for domain experts (e.g., physiotherapists) to adjust thresholds or add new exercises without modifying the core codebase.
 
 \paragraph{Elementary Configuration}
-The \texttt{form\_codes\_config.py} file defines the primitives for each exercise. Each entry specifies the measurement type, units, and strict categorization thresholds. For example, the configuration for squat depth is defined as:
+FormCodes are defined by specifying the measurement type and categorization thresholds. Table~\ref{tab:formcode_example} shows an example configuration for squat depth.
 
-\begin{verbatim}
-"squat_depth": {
-    "type": "angle",
-    "description": "Angle of the knee joint...",
-    "categories": [
-        {"name": "deep", "v_max": 90},
-        {"name": "parallel", "v_min": 90, "v_max": 110},
-        {"name": "shallow", "v_min": 110}
-    ]
-}
-\end{verbatim}
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{llc}
+\toprule
+\textbf{Category} & \textbf{Threshold} & \textbf{Interpretation} \\
+\midrule
+deep & $\theta < 90^\circ$ & Full depth squat \\
+parallel & $90^\circ \leq \theta < 110^\circ$ & Thighs parallel \\
+shallow & $\theta \geq 110^\circ$ & Insufficient depth \\
+\bottomrule
+\end{tabular}
+\caption{Example FormCode: \texttt{squat\_depth} (knee angle).}
+\label{tab:formcode_example}
+\end{table}
 
 \paragraph{Production Rule Configuration}
-The \texttt{super\_form\_codes\_config.py} file defines high-level states using logical rules. These rules specify which elementary FormCode categories must be present (\texttt{must\_be}) or absent (\texttt{must\_not\_be}).
+Super FormCodes combine elementary FormCodes using logical rules. Table~\ref{tab:superformcode_example} shows an example for detecting a good squat repetition.
 
-\begin{verbatim}
-"GOOD_REP": {
-    "description": "A well-executed squat...",
-    "rules": [
-        {"form_code": "squat_depth", "must_be": ["deep"]},
-        {"form_code": "knee_stability", 
-         "must_not_be": ["unstable", "slight_wobble"]},
-        {"form_code": "torso_angle", 
-         "must_not_be": ["bent_over", "leaning"]}
-    ]
-}
-\end{verbatim}
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{FormCode} & \textbf{Must Be} & \textbf{Must Not Be} \\
+\midrule
+squat\_depth & deep & --- \\
+knee\_stability & --- & unstable, wobble \\
+torso\_angle & --- & bent\_over, leaning \\
+\bottomrule
+\end{tabular}
+\caption{Example Super FormCode: \texttt{GOOD\_REP} rule definition.}
+\label{tab:superformcode_example}
+\end{table}
 
 This data-driven approach decouples the biomechanical definitions from the pose estimation logic, similar to the PoseScript architecture \cite{delmas2022posescript}.
 
@@ -238,15 +245,20 @@ This data-driven approach decouples the biomechanical definitions from the pose 
 The FormScript pipeline feeds into two complementary feedback paths: real-time coaching during exercise and offline analysis after workout completion.
 
 \paragraph{Real-Time Feedback}
-During exercise, feedback must maintain sub-100ms latency. The system provides:
+During exercise, feedback must maintain sub-100ms latency. The repetition counter tracks four phases: BOTTOM $\rightarrow$ UP\_PHASE $\rightarrow$ TOP $\rightarrow$ DOWN\_PHASE. The system provides:
 
 \begin{enumerate}
-    \item \textbf{Post-Rep Commands}: After each repetition, Super FormCodes are mapped to concise coaching commands. For example:
+    \item \textbf{Intra-Rep Guidance}: During the UP\_PHASE (before the rep is counted), the system monitors form and provides corrective cues to help users complete each repetition properly:
     \begin{itemize}
-        \item BODY\_SWING $\rightarrow$ ``No swinging! Use your bicep only.''
-        \item ELBOW\_DRIFT $\rightarrow$ ``Pin your elbow to your side!''
-        \item SHALLOW\_SQUAT $\rightarrow$ ``Go deeper!''
-        \item KNEE\_CAVE $\rightarrow$ ``Knees out!''
+        \item ``Go deeper!'' --- when squat depth is insufficient to reach TOP
+        \item ``Keep elbows still!'' --- when elbow drift is detected during curl ascent
+        \item ``Knees out!'' --- when knee cave is forming during squat ascent
+    \end{itemize}
+    
+    \item \textbf{Post-Rep Summary}: After each repetition completes (reaching BOTTOM again), Super FormCodes trigger brief feedback:
+    \begin{itemize}
+        \item GOOD\_REP $\rightarrow$ ``Nice rep!''
+        \item BODY\_SWING $\rightarrow$ ``Less swing next time''
     \end{itemize}
     
     \item \textbf{Guidance Arrows}: Visual AR overlays on the skeleton showing direction of correction:
@@ -255,8 +267,6 @@ During exercise, feedback must maintain sub-100ms latency. The system provides:
         \item Arrow on knee pointing outward for KNEE\_CAVE
         \item Arrow on hip pointing down for SHALLOW\_SQUAT
     \end{itemize}
-    
-    \item \textbf{Joint Highlighting}: Problematic joints are highlighted in red on the skeleton overlay.
 \end{enumerate}
 
 \paragraph{Offline Feedback (Post-Workout)}
@@ -269,11 +279,12 @@ After the workout session, accumulated FormCode data from all repetitions is pro
         \item swing\_momentum = body\_swing $\rightarrow$ ``Significant body swing detected---you're using momentum instead of muscle.''
     \end{itemize}
     
-    \item \textbf{LLM-Powered Session Summary}: All repetition data is aggregated and sent to an LLM (Llama 3.3 70B via Cerebras) to generate a natural language summary:
+    \item \textbf{LLM-Powered Session Summary}: An aggregated session summary is sent to an LLM (Llama 3.3 70B via Cerebras). The summary contains: total reps, good reps count, form score percentage, the top 2 detected issues with their Super FormCode names and descriptions, and \textbf{all per-rep FormScript feedback sentences}. These requests are logged to \texttt{llm\_logs/} for debugging. The LLM generates a natural language summary with:
     \begin{itemize}
-        \item Total reps and form score
-        \item Most common issues with actionable tips
-        \item Encouraging motivation for next session
+        \item Positive acknowledgment of effort
+        \item Form score and rep count
+        \item Constructive tip for the most common issue
+        \item Motivation for next session
     \end{itemize}
     
     \item \textbf{Q\&A Capability}: Users can ask follow-up questions about their workout (e.g., ``How was my elbow position?'') and receive personalized responses based on their session data.
