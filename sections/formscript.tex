@@ -130,203 +130,29 @@ We categorize FormCodes into two groups based on their nature:
 
 \paragraph{Static FormCodes}
 
-Static FormCodes analyze body geometry based on individual frames. While some are checked continuously (e.g., torso lean), others are critical at specific key moments (e.g., squat depth). They are adapted from PoseScript's posecode categories.
+Static FormCodes analyze body geometry based on individual frames. While some are checked continuously (e.g., torso lean), others are critical at specific key moments (e.g., squat depth). We define five Static FormCode types:
 
-\subparagraph{Angle FormCodes}
-Measure joint flexion at key moments during exercise.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
-\hline
-completely bent & $v \pm 5 \leq 45$ & L/R-knee, L/R-elbow \\
-almost completely bent & $45 < v \pm 5 \leq 75$ & L/R-knee, L/R-elbow \\
-bent at right angle & $75 < v \pm 5 \leq 105$ & L/R-knee, L/R-elbow \\
-partially bent & $105 < v \pm 5 \leq 135$ & L/R-knee, L/R-elbow \\
-slightly bent & $135 < v \pm 5 \leq 160$ & L/R-knee, L/R-elbow \\
-straight & $v \pm 5 > 160$ & L/R-knee, L/R-elbow \\
-\hline
-\end{tabular}
-\caption{Angle FormCode categorizations with noise tolerance $\pm 5^\circ$.}
-\label{tab:angle-formcodes}
-\end{table}
-
-\paragraph{Distance FormCodes}
-Measure relative spacing between body parts.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Categorization} & \textbf{Condition (m)} & \textbf{Applied To} \\
-\hline
-close & $v \pm 0.05 \leq 0.20$ & L/R-elbow vs. torso \\
-shoulder width & $0.20 < v \pm 0.05 \leq 0.40$ & L/R-foot, L/R-hand \\
-spread & $0.40 < v \pm 0.05 \leq 0.80$ & L/R-knee, L/R-foot \\
-wide & $v \pm 0.05 > 0.80$ & L/R-foot stance \\
-\hline
-\end{tabular}
-\caption{Distance FormCode categorizations.}
-\label{tab:distance-formcodes}
-\end{table}
-
-\paragraph{Relative Position FormCodes}
-Measure spatial relationships between joints along X, Y, and Z axes.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Axis} & \textbf{Categorization} & \textbf{Condition} \\
-\hline
-X (lateral) & at the right of / x-ignored / at the left of & $v \pm 0.05 \lessgtr \pm 0.15$ \\
-Y (vertical) & below / y-ignored / above & $v \pm 0.05 \lessgtr \pm 0.15$ \\
-Z (depth) & behind / z-ignored / in front of & $v \pm 0.05 \lessgtr \pm 0.15$ \\
-\hline
-\end{tabular}
-\caption{Relative position FormCode categorizations along each axis.}
-\label{tab:relpos-formcodes}
-\end{table}
-
-\paragraph{Pitch \& Roll FormCodes}
-Measure body segment orientation relative to vertical.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
-\hline
-vertical (upright) & $v \pm 5 \leq 10$ & torso, pelvis \\
-ignored (leaning) & $10 < v \pm 5 \leq 80$ & torso, pelvis \\
-horizontal (bent over) & $v \pm 5 > 80$ & torso, pelvis \\
-\hline
-\end{tabular}
-\caption{Pitch \& roll FormCode categorizations.}
-\label{tab:pitchroll-formcodes}
-\end{table}
-
-\paragraph{Ground-Contact FormCodes}
-Detect whether body parts are in contact with the ground.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Categorization} & \textbf{Condition (m)} & \textbf{Applied To} \\
-\hline
-on the ground & $v \pm 0.05 \leq 0.10$ & L/R-knee, L/R-foot \\
-ground-ignored & $v \pm 0.05 > 0.10$ & L/R-knee, L/R-foot \\
-\hline
-\end{tabular}
-\caption{Ground-contact FormCode categorizations.}
-\label{tab:ground-formcodes}
-\end{table}
+\begin{itemize}
+    \item \textbf{Angle}: Measure joint flexion (e.g., knee angle, elbow angle)
+    \item \textbf{Distance}: Measure spacing between body parts (e.g., elbow-to-torso distance)
+    \item \textbf{Relative Position}: Measure spatial relationships along X/Y/Z axes
+    \item \textbf{Pitch \& Roll}: Measure body segment orientation relative to vertical
+    \item \textbf{Ground Contact}: Detect contact with the ground
+\end{itemize}
 
 \paragraph{Dynamic FormCodes}
 
-Dynamic FormCodes extend PoseScript's static approach to analyze motion quality over time, which is critical for exercise evaluation. We define five Dynamic FormCode types.
+Dynamic FormCodes extend PoseScript's static approach to analyze motion quality over time, which is critical for exercise evaluation. We define five Dynamic FormCode types:
 
-\subparagraph{Velocity FormCodes}
-Measure the speed of movement phases (descent, ascent, lift, lower).
+\begin{itemize}
+    \item \textbf{Velocity}: Measure speed of movement phases (controlled, fast, explosive)
+    \item \textbf{Jerk}: Measure smoothness via rate of acceleration change
+    \item \textbf{Deviation}: Measure maximum displacement from expected trajectory
+    \item \textbf{Symmetry}: Measure left-right asymmetry during movement
+    \item \textbf{Duration}: Measure time spent in specific positions
+\end{itemize}
 
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
-\hline
-controlled & $v \leq 0.5$ m/s & descent\_speed, ascent\_speed \\
-fast & $0.5 < v \leq 1.0$ m/s & descent\_speed, ascent\_speed \\
-dive/explosive & $v > 1.0$ m/s & descent\_speed, ascent\_speed \\
-\hline
-\end{tabular}
-\caption{Velocity FormCode categorizations.}
-\label{tab:velocity-formcodes}
-\end{table}
-
-\subparagraph{Jerk FormCodes}
-Measure smoothness via rate of acceleration change.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
-\hline
-smooth & jerk $\leq 2.5$ m/s$^3$ & movement\_smoothness \\
-shaky & $2.5 <$ jerk $\leq 5.0$ m/s$^3$ & movement\_smoothness \\
-unstable & jerk $> 5.0$ m/s$^3$ & movement\_smoothness \\
-\hline
-\end{tabular}
-\caption{Jerk FormCode categorizations.}
-\label{tab:jerk-formcodes}
-\end{table}
-
-\subparagraph{Deviation FormCodes}
-Measure maximum deviation from expected path or position.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
-\hline
-stable & $v \leq 0.05$ m & knee\_stability, path\_arc \\
-slight\_wobble & $0.05 < v \leq 0.1$ m & knee\_stability, path\_arc \\
-unstable & $v > 0.1$ m & knee\_stability, path\_arc \\
-\hline
-\end{tabular}
-\caption{Deviation FormCode categorizations.}
-\label{tab:deviation-formcodes}
-\end{table}
-
-\subparagraph{Symmetry FormCodes}
-Measure left-right asymmetry during movement.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
-\hline
-level & $v \leq 0.03$ m & hip\_shift \\
-slight\_shift & $0.03 < v \leq 0.07$ m & hip\_shift \\
-major\_shift & $v > 0.07$ m & hip\_shift \\
-\hline
-\end{tabular}
-\caption{Symmetry FormCode categorizations.}
-\label{tab:symmetry-formcodes}
-\end{table}
-
-\subparagraph{Duration FormCodes}
-Measure time spent in specific positions.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
-\hline
-squeeze & $t \geq 0.5$ s & pause\_at\_top \\
-touch\_and\_go & $t < 0.5$ s & pause\_at\_top \\
-\hline
-\end{tabular}
-\caption{Duration FormCode categorizations.}
-\label{tab:duration-formcodes}
-\end{table}
+Complete threshold definitions and categorization conditions for all FormCode types are provided in Appendix~\ref{appendix:formcodes}.
 
 \subsubsection{Super FormCodes: Production Rules}
 

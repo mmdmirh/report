@@ -1,0 +1,210 @@
+\appendix
+
+% Configure table numbering for appendix (A1, A2, A3, ...)
+\renewcommand{\thetable}{A\arabic{table}}
+\setcounter{table}{0}
+
+\section{FormCode Reference Tables}
+\label{appendix:formcodes}
+
+This appendix provides a complete reference of all FormCode categorizations used in the FormScript system. Each table defines the discrete categories, threshold conditions, and applicable body parts for a specific FormCode type.
+
+\subsection{Static FormCodes}
+
+Static FormCodes evaluate body geometry on individual frames.
+
+\subsubsection{Angle FormCodes}
+Measure joint flexion at key moments during exercise.
+
+\begin{table}[h]
+\caption{Angle FormCode categorizations with noise tolerance $\pm 5^\circ$.}
+\label{tab:angle-formcodes}
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+completely bent & $v \pm 5 \leq 45$ & L/R-knee, L/R-elbow \\
+almost completely bent & $45 < v \pm 5 \leq 75$ & L/R-knee, L/R-elbow \\
+bent at right angle & $75 < v \pm 5 \leq 105$ & L/R-knee, L/R-elbow \\
+partially bent & $105 < v \pm 5 \leq 135$ & L/R-knee, L/R-elbow \\
+slightly bent & $135 < v \pm 5 \leq 160$ & L/R-knee, L/R-elbow \\
+straight & $v \pm 5 > 160$ & L/R-knee, L/R-elbow \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Distance FormCodes}
+Measure relative spacing between body parts.
+
+\begin{table}[h]
+\caption{Distance FormCode categorizations.}
+\label{tab:distance-formcodes}
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition (m)} & \textbf{Applied To} \\
+\hline
+close & $v \pm 0.05 \leq 0.20$ & L/R-elbow vs. torso \\
+shoulder width & $0.20 < v \pm 0.05 \leq 0.40$ & L/R-foot, L/R-hand \\
+spread & $0.40 < v \pm 0.05 \leq 0.80$ & L/R-knee, L/R-foot \\
+wide & $v \pm 0.05 > 0.80$ & L/R-foot stance \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Relative Position FormCodes}
+Measure spatial relationships between joints along X, Y, and Z axes.
+
+\begin{table}[h]
+\caption{Relative position FormCode categorizations along each axis.}
+\label{tab:relpos-formcodes}
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Axis} & \textbf{Categorization} & \textbf{Condition} \\
+\hline
+X (lateral) & at the right of / x-ignored / at the left of & $v \pm 0.05 \lessgtr \pm 0.15$ \\
+Y (vertical) & below / y-ignored / above & $v \pm 0.05 \lessgtr \pm 0.15$ \\
+Z (depth) & behind / z-ignored / in front of & $v \pm 0.05 \lessgtr \pm 0.15$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Pitch \& Roll FormCodes}
+Measure body segment orientation relative to vertical.
+
+\begin{table}[h]
+\caption{Pitch \& roll FormCode categorizations.}
+\label{tab:pitchroll-formcodes}
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+vertical (upright) & $v \pm 5 \leq 10$ & torso, pelvis \\
+ignored (leaning) & $10 < v \pm 5 \leq 80$ & torso, pelvis \\
+horizontal (bent over) & $v \pm 5 > 80$ & torso, pelvis \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Ground-Contact FormCodes}
+Detect whether body parts are in contact with the ground.
+
+\begin{table}[h]
+\caption{Ground-contact FormCode categorizations.}
+\label{tab:ground-formcodes}
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition (m)} & \textbf{Applied To} \\
+\hline
+on the ground & $v \pm 0.05 \leq 0.10$ & L/R-knee, L/R-foot \\
+ground-ignored & $v \pm 0.05 > 0.10$ & L/R-knee, L/R-foot \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Dynamic FormCodes}
+
+Dynamic FormCodes evaluate motion quality over temporal windows.
+
+\subsubsection{Velocity FormCodes}
+Measure the speed of movement phases (descent, ascent, lift, lower).
+
+\begin{table}[h]
+\caption{Velocity FormCode categorizations.}
+\label{tab:velocity-formcodes}
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+controlled & $v \leq 0.5$ m/s & descent\_speed, ascent\_speed \\
+fast & $0.5 < v \leq 1.0$ m/s & descent\_speed, ascent\_speed \\
+dive/explosive & $v > 1.0$ m/s & descent\_speed, ascent\_speed \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Jerk FormCodes}
+Measure smoothness via rate of acceleration change.
+
+\begin{table}[h]
+\caption{Jerk FormCode categorizations.}
+\label{tab:jerk-formcodes}
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+smooth & jerk $\leq 2.5$ m/s$^3$ & movement\_smoothness \\
+shaky & $2.5 <$ jerk $\leq 5.0$ m/s$^3$ & movement\_smoothness \\
+unstable & jerk $> 5.0$ m/s$^3$ & movement\_smoothness \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Deviation FormCodes}
+Measure maximum deviation from expected path or position.
+
+\begin{table}[h]
+\caption{Deviation FormCode categorizations.}
+\label{tab:deviation-formcodes}
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+stable & $v \leq 0.05$ m & knee\_stability, path\_arc \\
+slight\_wobble & $0.05 < v \leq 0.1$ m & knee\_stability, path\_arc \\
+unstable & $v > 0.1$ m & knee\_stability, path\_arc \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Symmetry FormCodes}
+Measure left-right asymmetry during movement.
+
+\begin{table}[h]
+\caption{Symmetry FormCode categorizations.}
+\label{tab:symmetry-formcodes}
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+level & $v \leq 0.03$ m & hip\_shift \\
+slight\_shift & $0.03 < v \leq 0.07$ m & hip\_shift \\
+major\_shift & $v > 0.07$ m & hip\_shift \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Duration FormCodes}
+Measure time spent in specific positions.
+
+\begin{table}[h]
+\caption{Duration FormCode categorizations.}
+\label{tab:duration-formcodes}
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\hline
+squeeze & $t \geq 0.5$ s & pause\_at\_top \\
+touch\_and\_go & $t < 0.5$ s & pause\_at\_top \\
+\hline
+\end{tabular}
+\end{table}
