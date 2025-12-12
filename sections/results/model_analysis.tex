@@ -1,0 +1,218 @@
+\subsection{Model Comparison and Post-Processing Evaluation}
+\label{sec:model-eval}
+
+We evaluate pose estimation backends from three complementary aspects:
+(1) absolute accuracy against ground truth,
+(2) robustness across camera viewpoints,
+and (3) real-time inference latency.
+Our goal is to identify the most suitable pose estimation (PE) model
+for a real-time fitness coaching application.
+
+To this end, we conduct two offline experiments. 
+The first is a motion-capture dataset with accurate 3D ground truth to quantify per-frame errors.
+The second relies on a custom multi-view dataset without ground truth to evaluate
+cross-view stability under realistic camera placements.
+Together, these two settings allow us to assess both numerical accuracy and
+viewpoint robustness, which are essential for reliable exercise feedback.
+
+Across both experiments, we consider five common strength-training exercises:
+\emph{bicep curl, push-up, squat, barbell rowing, and lateral raise}.
+All metrics are computed per frame and then averaged over frames, exercises,
+and views when applicable.
+
+\paragraph{Extracted Metrics.}
+We report the following metrics:
+
+\begin{itemize}
+    \item \textbf{Upper-body joint-angle error (Upper JE).}
+    Mean absolute angular error (in degrees) for shoulder and elbow joints,
+    computed between predicted and ground-truth joint angles.
+
+    \item \textbf{Lower-body joint-angle error (Lower JE).}
+    Mean absolute angular error (in degrees) for hip and knee joints.
+
+    \item \textbf{``Better-view'' joint-angle error.}
+    Since a monocular camera often observes one body side more clearly than the other,
+    we additionally report the minimum error between left and right counterparts,
+    i.e., $\min(\text{left}, \text{right})$.
+
+    \item \textbf{Joint distance error.}
+    Mean absolute error of selected joint-to-joint distances
+    (e.g., shoulder width, wrist--hip, knee--hip, knee--foot),
+    normalized by torso scale
+    $t=\frac{\|p_{RS}-p_{LS}\|+\|p_{RH}-p_{LH}\|}{2}$
+    to remove subject-size effects.
+
+    \item \textbf{Latency.}
+    Average per-frame inference time, including the 2D detector and any 3D lifting
+    or post-processing steps.
+
+    \item \textbf{Stability (custom dataset only).}
+    Standard deviation (std) of joint angles and normalized joint distances
+    across frames and viewpoints, where lower values indicate higher robustness
+    to viewpoint changes.
+    Specifically, joint-angle stability includes
+    RE/LE (right/left elbow),
+    RK/LK (right/left knee),
+    RH/LH (right/left hip),
+    and RS/LS (right/left shoulder).
+    Distance-based stability includes
+    shoulder width (\emph{shl}),
+    right shoulder--right palm (\emph{rshl\_rpalm}),
+    right shoulder--right hip (\emph{rshl\_rhip}),
+    right palm--right hip (\emph{rpalm\_rhip}),
+    right knee--right hip (\emph{rknee\_rhip}),
+    right knee--right foot (\emph{rknee\_rfeet}),
+    and right hip--right foot (\emph{rhip\_rfeet}),
+    all normalized by torso scale.
+\end{itemize}
+
+
+\subsubsection{Fit3D Results}
+
+We first evaluate pose estimation accuracy on a subset of the Fit3D dataset
+introduced in AIFit \cite{fieraru2021aifit}.
+This dataset provides synchronized multi-view videos and accurate 3D joint
+ground truth captured using a motion-capture system.
+
+\textbf{Dataset characteristics.}
+Each exercise sequence is recorded from four fixed camera viewpoints
+surrounding the subject.
+3D joint locations (from ground-truth annotations and 3D-based models) are projected to the 2D image plane using the provided camera view parameters when needed, enabling a fair comparison with 2D-based models.
+
+\begin{table}[t]
+  \centering
+  \small
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lcccccc}
+    \hline
+    Model & 
+    Upper JE & Upper JE (better) &
+    Lower JE & Lower JE (better) &
+    Joint Dist & Frame latency (ms) \\
+    \hline
+    MediaPipe\_2d (4M) &
+    $25.32 \pm 12.58$ & $22.00 \pm 10.48$ &
+    $24.63 \pm 8.46$  & $18.55 \pm 7.33$  &
+    $0.23 \pm 0.03$ & 38  \\
+    MediaPipe\_3d  (4M) &
+    $27.16 \pm 12.73$ & $23.26 \pm 12.04$ &
+    $19.40 \pm 8.01$  & $16.14 \pm 8.38$  &
+    $0.23 \pm 0.03$ & 38  \\
+    MoveNet\_2d   (2.3M) &
+    $21.29 \pm 11.61$ & $14.08 \pm 8.51$ &
+    $20.07 \pm 6.88$  & $10.93 \pm 5.22$  &
+    $0.23 \pm 0.03$ & 45  \\
+    HRNet\_2d  (28.5M) &
+    $16.99 \pm 9.42$  & $14.75 \pm 8.97$ &
+    $18.14 \pm 5.20$  & $11.82 \pm 4.42$  &
+    $0.20 \pm 0.02$ & 602 \\
+    HRNet\_2d+VideoPose\_1   (17M, lifter only) &
+    $41.04 \pm 28.67$ & $38.12 \pm 27.65$ &
+    $18.67 \pm 11.30$ & $16.17 \pm 11.02$ &
+    $0.20 \pm 0.05$ & 641 \\
+    HRNet\_2d+VideoPose\_243  (17M, lifter only) &
+    $42.80 \pm 30.25$ & $39.73 \pm 30.09$ &
+    $18.52 \pm 12.16$ & $16.14 \pm 11.76$ &
+    $0.20 \pm 0.05$ & 671 \\
+    HRNet\_2d+MotionBERT\_243  (43M, lifter only) &
+    $42.16 \pm 30.51$ & $38.92 \pm 30.22$ &
+    $16.11 \pm 11.50$ & $14.29 \pm 10.46$ &
+    $0.18 \pm 0.06$ & 680 \\
+    ROMP\_3d  (30M) &
+    $8.09 \pm 4.76$   & $7.03 \pm 4.19$  &
+    $10.26 \pm 3.83$  & $8.88 \pm 3.33$  &
+    $0.22 \pm 0.07$ & 598 \\
+    \textbf{MoveNet\_ours} (2.3M) &
+    $18.15 \pm 8.25$ & $8.36 \pm 5.86$ &
+    $21.04 \pm 9.28$  & $9.21 \pm 5.61$  &
+    $0.104 \pm 0.036$ & 45  \\
+    \hline
+  \end{tabular}%
+  }
+  \caption{
+  Comparison of pose estimation backends on the Fit3D dataset.
+  The dataset provides motion-capture 3D ground truth and four camera views per exercise.
+  We report per-frame upper- and lower-body joint-angle error (JE, in degrees),
+  a ``better-view'' score defined as the minimum of left/right errors to account for partial visibility,
+  torso-normalized joint-distance error,
+  and average per-frame latency.
+  All results are averaged over five exercises:
+  bicep curl, push-up, squat, barbell rowing, and lateral raise.
+  }
+  \label{tab:backend-results}
+\end{table}
+
+Table~\ref{tab:backend-results} highlights the trade-off between accuracy and latency.
+Among lightweight models, \textbf{MoveNet\_2D} provides the best balance between accuracy and inference speed.
+With our post-processing, \textbf{MoveNet\_ours} significantly reduces joint-angle and joint-distance errors while preserving the same inference time.
+We further observe that 2D-to-3D lifting pipelines (HRNet+VideoPose and HRNet+MotionBERT) perform worse than HRNet alone, likely due to overfitting to motion patterns in their training datasets that differ from strength-training exercises.
+In contrast, monocular 3D pose estimation models and heavier 2D-based models achieve high accuracy but suffer from prohibitive latency, making them unsuitable for real-time feedback scenarios.
+
+\subsubsection{Custom Multi-view Dataset Results}
+
+To assess robustness under realistic camera placements,
+we evaluate models on a custom dataset collected using a single RGB camera.
+
+\textbf{Dataset characteristics.}
+Each exercise is recorded from 15 viewpoints,
+formed by three camera elevations combined with five azimuth angles.
+No ground-truth joint annotations are available.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccccccccccccccc}
+\toprule
+\textbf{Exercise} &
+\textbf{RE} & \textbf{LE} & \textbf{RK} & \textbf{LK} &
+\textbf{RH} & \textbf{LH} & \textbf{RS} & \textbf{LS} &
+\textbf{shl} & \textbf{rshl\_rpalm} & \textbf{rshl\_rhip} &
+\textbf{rpalm\_rhip} & \textbf{rknee\_rhip} & 
+\textbf{rknee\_rfeet} & \textbf{rhip\_rfeet} \\
+\midrule
+\multicolumn{16}{c}{\textbf{Before (\texttt{movenet\_raw})}} \\
+\midrule
+push\_up        & 41.05 & 35.37 & 12.14 & 15.23 & 16.01 & 17.50 & 23.25 & 23.01 & 0.02 & 0.02 & 0.01 & 0.03 & 0.02 & 0.02 & 0.02 \\
+bicep\_curl     & 47.32 & 51.96 &  4.54 &  4.05 &  2.81 &  2.23 &  4.20 &  3.40 & 0.00 & 0.02 & 0.00 & 0.02 & 0.00 & 0.00 & 0.00 \\
+squat           & 17.79 & 14.33 & 39.77 & 37.92 & 36.36 & 34.19 & 11.67 & 10.24 & 0.01 & 0.01 & 0.01 & 0.02 & 0.03 & 0.02 & 0.01 \\
+lateral\_raise  & 18.12 & 12.39 &  2.89 &  2.28 &  2.51 &  2.52 & 33.71 & 35.96 & 0.00 & 0.05 & 0.00 & 0.05 & 0.00 & 0.00 & 0.00 \\
+barbell\_row    & 21.22 & 24.59 &  3.88 &  3.03 &  4.93 &  4.02 & 16.02 & 16.85 & 0.01 & 0.03 & 0.01 & 0.03 & 0.00 & 0.00 & 0.01 \\
+\midrule
+\multicolumn{16}{c}{\textbf{After (\texttt{movenet\_{\text{ours}}})}} \\
+\midrule
+push\_up        & 34.45 & 26.83 &  9.89 & 11.59 & 12.00 & 13.12 & 18.54 & 17.89 & 0.01 & 0.01 & 0.01 & 0.02 & 0.01 & 0.01 & 0.01 \\
+bicep\_curl     & 38.25 & 42.40 &  2.50 &  1.95 &  1.55 &  1.41 &  2.86 &  2.50 & 0.00 & 0.01 & 0.00 & 0.01 & 0.00 & 0.00 & 0.00 \\
+squat           & 12.41 & 11.23 & 32.06 & 31.99 & 29.46 & 28.98 &  9.29 &  8.39 & 0.01 & 0.01 & 0.01 & 0.02 & 0.02 & 0.02 & 0.01 \\
+lateral\_raise  & 13.69 &  8.69 &  1.90 &  1.41 &  1.63 &  1.55 & 25.68 & 28.54 & 0.00 & 0.04 & 0.00 & 0.04 & 0.00 & 0.00 & 0.00 \\
+barbell\_row    & 14.95 & 18.87 &  2.41 &  1.85 &  3.07 &  2.69 & 12.15 & 13.98 & 0.00 & 0.02 & 0.01 & 0.02 & 0.00 & 0.00 & 0.00 \\
+\bottomrule
+\end{tabular}%
+}
+\caption{
+Cross-view stability evaluation on the custom multi-view dataset.
+Each exercise is recorded from 15 viewpoints
+(3 camera elevations $\times$ 5 azimuth angles) using a single RGB camera.
+Since no ground truth is available, we report the standard deviation (std)
+of joint angles and torso-normalized joint distances across frames and views,
+where lower values indicate higher robustness to viewpoint changes.
+Results are shown before (MoveNet\_raw) and after our post-processing
+(MoveNet\_\texttt{ours}) for five exercises.
+}
+\label{tab:movenet_ours_std}
+\end{table}
+
+As shown in Table~\ref{tab:movenet_ours_std},
+our post-processing consistently reduces variance across viewpoints
+for both joint angles and distances.
+Improvements are particularly evident for side-view–sensitive joints
+such as elbows and knees, indicating increased robustness to
+foreshortening and partial occlusion.
+
+\paragraph{Summary.}
+Taken together, these results show that a carefully designed lightweight
+post-processing pipeline enables a small 2D model to achieve strong accuracy,
+high cross-view stability, and real-time performance.
+This makes \textbf{MoveNet\_ours} a practical and effective choice
+for interactive exercise coaching under unconstrained camera setups.

@@ -1,21 +1,108 @@
 \subsection{Pose Estimation Model Choice and Post-Processing}
 \label{sec:movenet-postproc}
-We benchmarked MediaPipe~2D/3D, MoveNet~2D, HRNet~2D (+ lifters), and ROMP~3D, and chose \textbf{MoveNet~2D} for its accuracy--latency balance. To further stabilize its output, we introduce four lightweight techniques applied per frame. We present each step with intuition and a compact formulation, allowing more breathing room than a terse bullet list.
 
-\paragraph{Body-centric Canonicalization.}
-Let $p_j\in\mathbb{R}^2$ be raw keypoints; torso center $c=\frac{1}{4}(p_{LS}+p_{RS}+p_{LH}+p_{RH})$. We translate $\tilde p_j=p_j-c$, rotate so pelvis axis is horizontal: $\hat p_j=R(\theta)\tilde p_j$, where $\theta=\arctan2(p_{RH}-p_{LH})$. A yaw proxy $s=\frac{\|p_{RS}-p_{LS}\|}{\|p_{RH}-p_{LH}\|}$ scales $x$ (clipped to $[0.7,1.3]$): $\bar p_j=(\hat p_j^{x}/s,\hat p_j^{y})$. Finally we normalize by torso scale $t=\frac{\|p_{RS}-p_{LS}\|+\|p_{RH}-p_{LH}\|}{2}$ and map back with $R(-\theta)$. \textit{Intuition:} align to a torso-centric frame, compensate side-view foreshortening, and reduce distance effects.
+We benchmarked MediaPipe~2D/3D, MoveNet~2D, HRNet~2D (+ lifters), and ROMP~3D, and selected \textbf{MoveNet~2D} for its accuracy--latency balance on consumer hardware. 
+To address viewpoint sensitivity, temporal jitter, and anatomical inconsistency
+observed in lightweight 2D pose estimators, we design a unified post-processing
+pipeline composed of four complementary steps. \\
+Each step is inspired by prior work in pose normalization, temporal filtering,
+and anatomical modeling, but is simplified and adapted to satisfy the constraints
+of real-time, monocular exercise coaching. \\
+\textbf{Notation}: keypoints $p_j\!\in\!\mathbb{R}^2$; shoulders $(LS,RS)$, hips $(LH,RH)$; rotation $R(\theta)$; torso scale $t$; confidence $c$; motion magnitude $m$; base noises $q_0,r_0$.
 
-\paragraph{Confidence-/Motion-Adaptive Kalman Smoothing.}
-Each joint keeps a 2D Kalman state $(x,P)$; process/measurement noise adapt to confidence $c$ and motion $m$:
+% ---------------------------------------------------------
+\paragraph{Body-centric Canonicalization (remove scale/rotation effects).}
+
+To eliminate camera-view distortion and distance scaling, we first build a torso-centric, upright, normalized coordinate frame.
+
+\textbf{(1) Translate to torso center:}
 \[
-Q = q_0 (1+2m)I,\quad R = r_0 (1+\max(0,1-c))I.
+c=\tfrac{1}{4}\bigl(p_{LS}+p_{RS}+p_{LH}+p_{RH}\bigr),\qquad 
+\tilde p_j=p_j-c.
 \]
-Predict: $P\!\leftarrow\!P+Q$; Update: $K=P(P+R)^{-1}$, $x\!\leftarrow\!x+K(z-x)$, $P\!\leftarrow\!(I-K)P$. \textit{Intuition:} low confidence $\Rightarrow$ stronger smoothing; fast motion $\Rightarrow$ weaker smoothing to avoid lag.
 
-\paragraph{Anatomical Consistency Projection.}
-For left/right limb pairs $(a,b),(a',b')$ (upper/lower arms, thighs, calves) we target a symmetric length $L$ maintained by an EMA $L\leftarrow \alpha L + (1-\alpha)\tfrac{\|p_b-p_a\|+\|p_{b'}-p_{a'}\|}{2}$. We project $p_b,p_{b'}$ to match $L$, reducing ``rubber-arm'' artifacts while staying close to observations. \textit{Intuition:} enforce mild bone-length consistency to stabilize limbs.
+\textbf{(2) Rotate pelvis to horizontal:}
+Let $\theta$ be the yaw/tilt angle estimated from hip alignment:
+\[
+\theta=\arctan2\!\bigl((p_{RH}-p_{LH})_y,\,(p_{RH}-p_{LH})_x\bigr),
+\]
+and rotate all joints:
+\[
+\hat p_j = R(\theta)\tilde p_j.
+\]
 
-\paragraph{Integrated Yaw Compensation.}
-The yaw scaling above doubles as a cheap side-view correction: broader shoulders vs. hips imply less foreshortening; the anisotropic scaling mitigates view-induced distortion without extra passes. \textit{Intuition:} fix side-view distortion without extra latency.
+\textbf{(3) Normalize scale using torso size:}
+\[
+t=\tfrac{\|p_{RS}-p_{LS}\|+\|p_{RH}-p_{LH}\|}{2}.
+\]
+This removes global scale changes caused by front/back distance.
 
-These steps add negligible overhead and, as shown in Sec.~\ref{sec:results}, significantly tighten joint-angle/distance variance while keeping per-frame latency essentially unchanged.
+All subsequent steps operate in this normalized frame before mapping back to the image.
+
+% ---------------------------------------------------------
+\paragraph{Yaw Compensation (correct side-view foreshortening).}
+
+Side-view poses compress shoulder width along the image $x$-axis.  
+We estimate yaw severity using the shoulder--hip width ratio:
+\[
+s=\frac{\|p_{RS}-p_{LS}\|}{\|p_{RH}-p_{LH}\|},\qquad s\in[0.7,1.3].
+\]
+A smaller $s$ implies a more rotated body.  
+We apply anisotropic scaling only along $x$:
+\[
+\bar p_j=\Bigl(\tfrac{\hat p_j^{x}}{s},\ \hat p_j^{y}\Bigr).
+\]
+Finally we map back:
+\[
+p_j^\star = R(-\theta)(\bar p_j/t) + c.
+\]
+This expands the foreshortened axis without altering vertical proportions.
+
+% ---------------------------------------------------------
+\paragraph{Confidence-/Motion-Adaptive Kalman Smoothing (balance stability and responsiveness).}
+
+Each joint maintains a 2D Kalman filter state $(x,P)$ with constant-velocity dynamics.  
+Noise terms adapt automatically:
+
+\[
+Q=q_0(1+2m)I,\qquad 
+R=r_0\bigl(1+\max(0,1-c)\bigr)I.
+\]
+
+\textit{Predict:}
+\[
+P\leftarrow P+Q.
+\]
+
+\textit{Update gain and state:}
+\[
+K=P(P+R)^{-1},\qquad
+x\leftarrow x + K(z-x).
+\]
+
+\textit{Covariance update:}
+\[
+P\leftarrow (I-K)P.
+\]
+
+Effect:  
+low confidence $\Rightarrow$ large $R$ (strong smoothing),  
+fast motion $\Rightarrow$ large $Q$ (less lag).
+
+% ---------------------------------------------------------
+\paragraph{Anatomical Consistency Projection (stabilize symmetric limb lengths).}
+
+To suppress ``rubber-arm'' stretching artifacts, we enforce soft bilateral symmetry on limb lengths.  
+For paired limbs $(a,b)$ and $(a',b')$ (upper/lower arms, thighs, calves), we maintain an EMA target:
+
+\[
+L\leftarrow \alpha L + (1-\alpha)\,
+\tfrac{\|p_b-p_a\| + \|p_{b'}-p_{a'}\|}{2}.
+\]
+
+We then project distal joints $p_b,p_{b'}$ to satisfy the target length~$L$ in the canonicalized frame and map back afterward.  
+This keeps symmetric limbs consistent while allowing natural variation and avoiding temporal lag.
+
+% ---------------------------------------------------------
+\paragraph{Overall effect.}
+All four steps are lightweight per-frame linear operations. Experiments in Sec.~\ref{sec:model-eval} show substantial reductions in angle/distance variance, improved view-robustness (especially under yaw), and preserved responsiveness suitable for real-time fitness feedback.

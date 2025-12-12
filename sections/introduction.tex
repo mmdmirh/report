@@ -1,13 +1,31 @@
 \section{Introduction}
-Home and gym fitness applications increasingly employ AI-based pose estimation to count exercise repetitions, yet most still lack real-time, adaptive coaching on movement quality. Early research systems such as Pose Trainer \cite{chen2020pose} and AIFit \cite{fieraru2021aifit} demonstrate that 3D pose analysis can detect posture errors and evaluate performance, but their pipelines remain offline, relying on recorded videos and computationally heavy 3D reconstruction. They provide limited personalization and cannot adapt feedback dynamically during a workout. Recent work such as ARFit \cite{mandic2023arfit} integrates augmented-reality visualization to guide users through motion sequences, but still applies generic thresholds and lacks quantitative evaluation of performance consistency.
 
-Commercial applications (e.g., Top Pushup \cite{toppushup}, QuickPose \cite{quickpose}) have popularized real-time motion counting and form tracking using smartphone cameras. However, they mainly focus on rep detection and simple form classification without deeper analysis—such as distinguishing good vs. bad repetitions, assessing tempo stability, or tracking per-joint improvement over time. Moreover, most commercial apps rely on fixed thresholds and provide limited adaptive or personalized feedback.
+Home and gym fitness applications increasingly employ AI-based pose estimation to count exercise repetitions, yet most still lack real-time, adaptive coaching on movement quality.
+Early research systems such as Pose Trainer~\cite{chen2020pose} and AIFit~\cite{fieraru2021aifit} demonstrate that 3D pose analysis can detect posture errors and evaluate performance, but their pipelines remain largely offline, relying on recorded videos and computationally heavy 3D reconstruction.
+As a result, these systems provide limited personalization and cannot adapt feedback dynamically during a workout.
+More recent work such as ARFit~\cite{mandic2023arfit} integrates augmented-reality visualization to guide users through motion sequences, but still applies generic thresholds and lacks quantitative evaluation of performance consistency across repetitions and viewpoints.
 
-FitCoachAR aims to bridge the gap between academic models and consumer applications by providing a lightweight, real-time, and adaptive coaching system. It monitors exercises via 2D pose estimation, detects common form errors, and delivers feedback through augmented-reality overlays and coach-style natural language cues. The system personalizes its critique level through a short calibration phase and produces both live corrections and post-session summaries.
+Commercial applications (e.g., Top Pushup~\cite{toppushup}, QuickPose~\cite{quickpose}) have popularized real-time motion counting and form tracking using smartphone cameras.
+However, their analysis is typically shallow, focusing on repetition detection or coarse form classification without distinguishing good versus poor repetitions, assessing tempo stability, or tracking joint-level consistency over time.
+Moreover, most commercial apps rely on fixed, population-level thresholds and offer limited adaptive or personalized feedback beyond simple prompts.
+
+Across both academic and commercial systems, improving robustness under viewpoint changes,
+reducing keypoint jitter, and enforcing physically plausible motion remain open challenges—especially
+under the constraints of real-time, monocular camera input.
+Prior work has explored individual directions such as skeleton normalization to canonical body frames,
+temporal filtering of keypoints, and anatomical constraints on limb lengths
+(e.g.,~\cite{shotton2013kinect,casiez2012oneeuro,welch2006kalman,akhter2015pose}),
+but these techniques are often studied in isolation or require calibrated cameras,
+offline processing, or heavy models.
+
+
+\textbf{FitCoachAR} aims to bridge the gap between academic models and consumer applications by providing a \textbf{lightweight, real-time, and adaptive coaching system}.
+It monitors exercises via 2D pose estimation, detects common form errors, and delivers feedback through \textbf{augmented-reality overlays} and \textbf{coach-style natural language cues}.
+The system personalizes its critique level through a short calibration phase and produces both live corrections and post-session summaries.
 
 This project addresses three major motivations:
 \begin{itemize}
-    \item \textbf{Accessibility}: Eliminate the dependency on motion-capture equipment and high-end GPUs.
-    \item \textbf{Personalization}: Adapt thresholds and critique sensitivity ($\delta$) to each user.
-    \item \textbf{Interactivity}: Transform static, after-exercise evaluation into continuous, real-time feedback that enhances motivation and engagement.
+    \item \textbf{Accessibility}: Eliminate the dependency on motion-capture equipment, camera calibration, and high-end GPUs.
+    \item \textbf{Personalization}: Adapt thresholds and critique sensitivity ($\delta$) to each user rather than relying on fixed global rules.
+    \item \textbf{Interactivity}: Transform static, after-exercise evaluation into \textbf{continuous, real-time feedback} that enhances engagement and training quality.
 \end{itemize}

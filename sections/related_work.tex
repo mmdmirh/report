@@ -1,31 +1,53 @@
 \section{Related Work}
+
 \subsection{Academic Systems}
-Pose Trainer (2020) \cite{chen2020pose} applied rule-based analysis of 2D skeletons from OpenPose \cite{cao2017realtime} to classify push-ups and squats. While effective for offline evaluation, it operates on recorded videos and uses fixed thresholds, providing no real-time correction or personalization.
+\textbf{Pose Trainer (2020)}~\cite{chen2020pose} applied rule-based analysis of 2D skeletons extracted by OpenPose~\cite{cao2017realtime} to classify exercises such as push-ups and squats.
+While effective for offline assessment, the system operates on recorded videos and relies on fixed, hand-crafted thresholds, offering neither real-time corrective feedback nor personalization across users.
 
-AIFit (CVPR 2021) \cite{fieraru2021aifit} introduced the Fit3D motion-capture dataset and a 3D feedback model capable of joint-level error localization using a deviation parameter ($\eta$) to control strictness. However, it depends on full-sequence 3D reconstruction (MubyNet) and produces template-based text feedback, making it computationally expensive and less adaptive.
+\textbf{AIFit (CVPR 2021)}~\cite{fieraru2021aifit} introduced the Fit3D motion-capture dataset and a 3D feedback model capable of joint-level error localization using a deviation parameter ($\eta$) to control critique strictness.
+Despite its interpretability, AIFit depends on full-sequence 3D reconstruction (MubyNet) and produces template-based textual feedback after processing entire videos, making it computationally expensive and unsuitable for interactive, real-time coaching.
 
-ARFit (IMWUT 2023) \cite{mandic2023arfit} added mobile AR overlays for pose visualization, showing that spatial feedback improves exercise learning. Yet, its thresholds remain generic and it lacks quantitative analytics such as repetition consistency or tempo tracking, focusing mainly on visual guidance.
+\textbf{ARFit (IMWUT 2023)}~\cite{mandic2023arfit} incorporated mobile augmented-reality overlays to visualize pose alignment during exercises, demonstrating that spatial feedback can improve motor learning.
+However, ARFit primarily focuses on visual guidance and still applies generic thresholds, without providing quantitative analytics such as repetition-level consistency, tempo variation, or joint-wise performance summaries.
 
 \subsection{Commercial Applications}
-Apps like Top Pushup \cite{toppushup} and QuickPose \cite{quickpose} popularized real-time repetition counting using smartphone cameras. Their analysis remains binary—labeling repetitions as correct or incorrect—without distinguishing motion quality, tempo stability, or per-joint improvements. They also rely on static thresholds and simple chatbot-style feedback rather than adaptive, natural-language coaching.
+Commercial fitness applications such as \textbf{Top Pushup}~\cite{toppushup} and \textbf{QuickPose}~\cite{quickpose} have popularized real-time repetition counting using smartphone cameras.
+Their feedback is typically binary—labeling repetitions as correct or incorrect—without distinguishing motion quality, temporal stability, or per-joint improvement over time.
+Moreover, these systems rely on static, population-level thresholds and simple chatbot-style prompts, offering limited personalization or biomechanically grounded coaching.
+
+\subsection{Pose Stabilization for Real-Time Monocular Systems}
+Lightweight pose estimation in monocular RGB videos is known to be sensitive to viewpoint changes,
+temporal jitter, and anatomically implausible keypoint distortions.
+Prior work has explored \textbf{body-centric canonicalization} to reduce scale and orientation variance by normalizing poses to a canonical reference frame (e.g.,~\cite{shotton2013kinect}),
+\textbf{temporal smoothing} to suppress frame-to-frame keypoint noise in interactive systems (e.g., One Euro filter~\cite{casiez2012oneeuro} and Kalman filtering~\cite{welch2006kalman}),
+and \textbf{anatomical constraints} to enforce physically plausible limb configurations and reduce ``rubber-limb'' artifacts (e.g.,~\cite{akhter2015pose}).
+However, these techniques are often studied in isolation, tuned for specific sensing setups (e.g., depth sensors or calibrated rigs),
+or evaluated outside real-time fitness coaching scenarios.
+FitCoachAR adapts and integrates these principles into a unified, per-frame post-processing pipeline that operates purely on 2D keypoints
+and preserves real-time responsiveness on consumer hardware.
 
 \subsection{Semantic Pose Representation}
-Recent work in computer vision has sought to bridge the gap between geometric pose data and natural language. PoseScript \cite{delmas2022posescript} introduced the concept of "posecodes"—atomic, rule-based boolean descriptors extracted from 3D keypoints—to generate synthetic textual descriptions of static human poses. Our system adopts a nearly identical architectural strategy, defining "FormCodes" as the semantic intermediate layer. However, while PoseScript focuses on static pose captioning, FitCoachAR extends this methodology to dynamic, temporal motion analysis, using these atomic codes to drive real-time coaching feedback.
+Recent work in computer vision has explored bridging geometric pose representations and natural language.
+\textbf{PoseScript}~\cite{delmas2022posescript} introduced the concept of \emph{posecodes}—atomic, rule-based boolean descriptors derived from 3D keypoints—to generate synthetic textual descriptions of static human poses.
+FitCoachAR adopts a similar architectural philosophy by defining \emph{FormCodes} as a semantic intermediate representation between pose geometry and language.
+However, while PoseScript focuses on static pose captioning, our system extends this paradigm to dynamic, temporal motion analysis, using these atomic codes to drive real-time corrective feedback and post-session coaching summaries.
+
 
 \subsection{Gap Summary}
-Across both research and consumer systems, key limitations persist:
+Across both academic and commercial systems, several limitations remain:
 \begin{itemize}
-    \item Offline or delayed feedback (Pose Trainer, AIFit).
-    \item Lack of personalization (global thresholds or $\delta$ not user-specific).
-    \item Shallow analysis (no holistic quality metrics).
-    \item Limited interactivity (no context-aware language feedback).
+    \item \textbf{Offline or delayed feedback} (Pose Trainer, AIFit).
+    \item \textbf{Limited personalization}, with global thresholds or non-user-specific deviation parameters.
+    \item \textbf{Shallow analysis}, lacking holistic metrics such as repetition quality, tempo stability, and joint-wise consistency.
+    \item \textbf{Limited interactivity}, with little integration of context-aware, natural-language feedback.
 \end{itemize}
 
-FitCoachAR addresses these gaps through:
+\textbf{FitCoachAR} addresses these gaps through:
 \begin{itemize}
-    \item Real-time 2D tracking and online calibration.
-    \item Adaptive deviation sensitivity ($\eta$) for user-specific tolerance.
-    \item AR-based spatial feedback.
+    \item Real-time 2D pose tracking with online processing,
+    \item Adaptive deviation sensitivity ($\eta$) for user-specific tolerance,
+    \item AR-based spatial feedback for intuitive correction, and
     \item LLM-driven natural coaching for motivating, context-aware guidance.
 \end{itemize}
-This integration combines AIFit's interpretability with ARFit's usability, achieving real-time, personalized exercise feedback on consumer hardware.
+
+By integrating interpretable pose analysis from AIFit with the usability of mobile AR systems, FitCoachAR enables real-time, personalized exercise coaching on consumer-grade hardware.
