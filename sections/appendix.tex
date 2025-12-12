@@ -43,14 +43,16 @@ Measure relative spacing between body parts.
 \label{tab:distance-formcodes}
 \centering
 \small
-\begin{tabular}{|l|l|l|}
+\begin{tabular}{|l|l|l|l|}
 \hline
-\textbf{Categorization} & \textbf{Condition (m)} & \textbf{Applied To} \\
+\textbf{Categorization} & \textbf{Condition} & \textbf{Unit} & \textbf{Applied To} \\
 \hline
-close & $v \pm 0.05 \leq 0.20$ & L/R-elbow vs. torso \\
-shoulder width & $0.20 < v \pm 0.05 \leq 0.40$ & L/R-foot, L/R-hand \\
-spread & $0.40 < v \pm 0.05 \leq 0.80$ & L/R-knee, L/R-foot \\
-wide & $v \pm 0.05 > 0.80$ & L/R-foot stance \\
+narrow & $v < 0.9$ & ratio & stance width (feet) \\
+shoulder\_width & $0.9 \leq v \leq 1.2$ & ratio & stance width (feet) \\
+wide & $v > 1.2$ & ratio & stance width (feet) \\
+anchored & $v \leq 0.08$ & normalized & elbow drift \\
+slight\_drift & $0.08 < v \leq 0.15$ & normalized & elbow drift \\
+major\_drift & $v > 0.15$ & normalized & elbow drift \\
 \hline
 \end{tabular}
 \end{table}
@@ -59,17 +61,16 @@ wide & $v \pm 0.05 > 0.80$ & L/R-foot stance \\
 Measure spatial relationships between joints along X, Y, and Z axes.
 
 \begin{table}[h]
-\caption{Relative position FormCode categorizations along each axis.}
+\caption{Relative position FormCode categorizations.}
 \label{tab:relpos-formcodes}
 \centering
 \small
 \begin{tabular}{|l|l|l|}
 \hline
-\textbf{Axis} & \textbf{Categorization} & \textbf{Condition} \\
+\textbf{Measurement} & \textbf{Categorization} & \textbf{Condition} \\
 \hline
-X (lateral) & at the right of / x-ignored / at the left of & $v \pm 0.05 \lessgtr \pm 0.15$ \\
-Y (vertical) & below / y-ignored / above & $v \pm 0.05 \lessgtr \pm 0.15$ \\
-Z (depth) & behind / z-ignored / in front of & $v \pm 0.05 \lessgtr \pm 0.15$ \\
+Knee forward travel (Z-axis) & behind\_toes & $v \leq 0$ m \\
+Knee forward travel (Z-axis) & over\_toes & $v > 0$ m \\
 \hline
 \end{tabular}
 \end{table}
@@ -161,13 +162,16 @@ Measure maximum deviation from expected path or position.
 \label{tab:deviation-formcodes}
 \centering
 \small
-\begin{tabular}{|l|l|l|}
+\begin{tabular}{|l|l|l|l|}
 \hline
-\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\textbf{Categorization} & \textbf{Condition} & \textbf{Unit} & \textbf{Applied To} \\
 \hline
-stable & $v \leq 0.05$ m & knee\_stability, path\_arc \\
-slight\_wobble & $0.05 < v \leq 0.1$ m & knee\_stability, path\_arc \\
-unstable & $v > 0.1$ m & knee\_stability, path\_arc \\
+stable / clean\_arc & $v \leq 0.05$ & m & knee\_stability, path\_arc \\
+slight\_wobble / wandering & $0.05 < v \leq 0.1$ & m & knee\_stability \\
+unstable & $v > 0.1$ & m & knee\_stability \\
+no\_swing & $v \leq 0.15$ & normalized & swing\_momentum \\
+slight\_swing & $0.15 < v \leq 0.25$ & normalized & swing\_momentum \\
+body\_swing & $v > 0.25$ & normalized & swing\_momentum \\
 \hline
 \end{tabular}
 \end{table}
@@ -182,11 +186,11 @@ Measure left-right asymmetry during movement.
 \small
 \begin{tabular}{|l|l|l|}
 \hline
-\textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
+\textbf{Categorization} & \textbf{Condition (m)} & \textbf{Applied To} \\
 \hline
-level & $v \leq 0.03$ m & hip\_shift \\
-slight\_shift & $0.03 < v \leq 0.07$ m & hip\_shift \\
-major\_shift & $v > 0.07$ m & hip\_shift \\
+level & $v \leq 0.03$ & hip\_shift \\
+slight\_shift & $0.03 < v \leq 0.07$ & hip\_shift \\
+major\_shift & $v > 0.07$ & hip\_shift \\
 \hline
 \end{tabular}
 \end{table}
