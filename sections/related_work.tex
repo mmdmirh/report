@@ -1,13 +1,13 @@
 \section{Related Work}
 
 \subsection{Academic Systems}
-\textbf{Pose Trainer (2020)}~\cite{chen2020pose} applied rule-based analysis of 2D skeletons extracted by OpenPose~\cite{cao2017realtime} to classify exercises such as push-ups and squats.
+\textbf{Pose Trainer}~\cite{chen2020pose} applied rule-based analysis of 2D skeletons extracted by OpenPose~\cite{cao2017realtime} to classify exercises such as push-ups and squats.
 While effective for offline assessment, the system operates on recorded videos and relies on fixed, hand-crafted thresholds, offering neither real-time corrective feedback nor personalization across users.
 
-\textbf{AIFit (CVPR 2021)}~\cite{fieraru2021aifit} introduced the Fit3D motion-capture dataset and a 3D feedback model capable of joint-level error localization using a deviation parameter ($\eta$) to control critique strictness.
+\textbf{AIFit}~\cite{fieraru2021aifit} introduced the Fit3D motion-capture dataset and a 3D feedback model capable of joint-level error localization using a deviation parameter ($\eta$) to control critique strictness.
 Despite its interpretability, AIFit depends on full-sequence 3D reconstruction (MubyNet) and produces template-based textual feedback after processing entire videos, making it computationally expensive and unsuitable for interactive, real-time coaching.
 
-\textbf{ARFit (IMWUT 2023)}~\cite{mandic2023arfit} incorporated mobile augmented-reality overlays to visualize pose alignment during exercises, demonstrating that spatial feedback can improve motor learning.
+\textbf{ARFit}~\cite{mandic2023arfit} incorporated mobile augmented-reality overlays to visualize pose alignment during exercises, demonstrating that spatial feedback can improve motor learning.
 However, ARFit primarily focuses on visual guidance and still applies generic thresholds, without providing quantitative analytics such as repetition-level consistency, tempo variation, or joint-wise performance summaries.
 
 \subsection{Commercial Applications}
