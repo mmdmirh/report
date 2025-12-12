@@ -9,6 +9,14 @@ Commercial applications (e.g., Top Pushup~\cite{toppushup}, QuickPose~\cite{quic
 However, their analysis is typically shallow, focusing on repetition detection or coarse form classification without distinguishing good versus poor repetitions, assessing tempo stability, or tracking joint-level consistency over time.
 Moreover, most commercial apps rely on fixed, population-level thresholds and offer limited adaptive or personalized feedback beyond simple prompts.
 
+Across both academic and commercial systems, improving robustness under viewpoint changes,
+reducing keypoint jitter, and enforcing physically plausible motion remain open challenges—especially
+under the constraints of real-time, monocular camera input.
+Prior work has explored individual directions such as skeleton normalization to canonical body frames,
+temporal filtering of keypoints, and anatomical constraints on limb lengths
+(e.g.,~\cite{tang2022gait,casiez2012oneeuro,welch2006kalman,hsu2024accv, chen2021anatomy}),
+but these techniques are often studied in isolation or require calibrated cameras,
+offline processing, or heavy models.
 
 \textbf{FitCoachAR} aims to bridge the gap between academic models and consumer applications by providing a \textbf{lightweight, real-time, and adaptive coaching system}.
 It monitors exercises via 2D pose estimation, detects common form errors, and delivers feedback through \textbf{augmented-reality overlays} and \textbf{coach-style natural language cues}.
@@ -20,61 +28,4 @@ This project addresses three major motivations:
     \item \textbf{Personalization}: Adapt thresholds and critique sensitivity ($\delta$) to each user rather than relying on fixed global rules.
     \item \textbf{Interactivity}: Transform static, after-exercise evaluation into \textbf{continuous, real-time feedback} that enhances engagement and training quality.
 \end{itemize}
-
-\subsection{System Overview}
-Figure~\ref{fig:system_overview} presents the system architecture. The user interacts through the interface, which captures video and displays feedback. The backend performs pose estimation, filtering, and rep counting, then passes data to the feedback engine which returns results to the interface.
-
-\begin{figure}[ht]
-\centering
-\begin{tikzpicture}[
-    box/.style={rectangle, draw, rounded corners, minimum width=2.2cm, minimum height=0.8cm, align=center, font=\small},
-    arrow/.style={->, >=stealth, thick}
-]
-
-% Top row: User flow
-\node[box, fill=blue!20] (user) at (0,0) {User};
-\node[box, fill=blue!20] (ui) at (4,0) {User Interface};
-\node[box, fill=orange!20] (feedback) at (8,0) {Feedback};
-
-% Bottom row: Processing pipeline
-\node[box, fill=green!20] (pose) at (0,-2.5) {Pose Est.};
-\node[box, fill=green!20] (filter) at (4,-2.5) {Filter};
-\node[box, fill=green!20] (rep) at (8,-2.5) {Rep Count};
-
-% Calibration below
-\node[box, fill=yellow!20] (calib) at (4,-4.5) {Calibration};
-
-% Arrows - top row
-\draw[arrow] (user) -- (ui);
-\draw[arrow] (ui) -- (feedback);
-\draw[arrow] (feedback) -- ++(0,0.8) -| node[pos=0.25,above,font=\scriptsize]{display} (ui);
-
-% Arrows - UI to processing
-\draw[arrow] (ui) -- node[left,font=\scriptsize]{frames} (pose);
-
-% Arrows - processing pipeline
-\draw[arrow] (pose) -- (filter);
-\draw[arrow] (filter) -- (rep);
-\draw[arrow] (rep) -- (feedback);
-
-% Calibration arrow
-\draw[arrow] (calib) -- (filter);
-
-\end{tikzpicture}
-\caption{FitCoachAR system architecture.}
-\label{fig:system_overview}
-\end{figure}
-
-
-
-
-
-
-
-
-
-
-
-
-
 

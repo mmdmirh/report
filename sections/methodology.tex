@@ -1,5 +1,49 @@
 \section{Methodology}
 
+\subsection{System Overview}
+Figure~\ref{fig:system_overview} presents the system architecture. The user interacts through the interface, which captures video and displays feedback. The backend performs pose estimation, filtering, and rep counting, then passes data to the feedback engine which returns results to the interface.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+    box/.style={rectangle, draw, rounded corners, minimum width=2.2cm, minimum height=0.8cm, align=center, font=\small},
+    arrow/.style={->, >=stealth, thick}
+]
+
+% Top row: User flow
+\node[box, fill=blue!20] (user) at (0,0) {User};
+\node[box, fill=blue!20] (ui) at (4,0) {User Interface};
+\node[box, fill=orange!20] (feedback) at (8,0) {Feedback};
+
+% Bottom row: Processing pipeline
+\node[box, fill=green!20] (pose) at (0,-2.5) {Pose Est.};
+\node[box, fill=green!20] (filter) at (4,-2.5) {Filter};
+\node[box, fill=green!20] (rep) at (8,-2.5) {Rep Count};
+
+% Calibration below
+\node[box, fill=yellow!20] (calib) at (4,-4.5) {Calibration};
+
+% Arrows - top row
+\draw[arrow] (user) -- (ui);
+\draw[arrow] (ui) -- (feedback);
+\draw[arrow] (feedback) -- ++(0,0.8) -| node[pos=0.25,above,font=\scriptsize]{display} (ui);
+
+% Arrows - UI to processing
+\draw[arrow] (ui) -- node[left,font=\scriptsize]{frames} (pose);
+
+% Arrows - processing pipeline
+\draw[arrow] (pose) -- (filter);
+\draw[arrow] (filter) -- (rep);
+\draw[arrow] (rep) -- (feedback);
+
+% Calibration arrow
+\draw[arrow] (calib) -- (filter);
+
+\end{tikzpicture}
+\caption{FitCoachAR system architecture.}
+\label{fig:system_overview}
+\end{figure}
+
 \input{sections/pose_acquisition}
 
 \input{sections/repetition_segmentation}
