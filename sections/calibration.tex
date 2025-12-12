@@ -1,0 +1,33 @@
+\subsection{Feature Computation and Calibration}
+From each repetition we compute angular features:
+\begin{itemize}
+    \item Active joints: elbows, knees, shoulders (max, min, correlation).
+    \item Passive joints: spine and pelvis (mean, standard deviation).
+\end{itemize}
+
+During calibration, each key joint or motion phase $i$ is analyzed over three ``best-form'' repetitions:
+The mean joint angle is
+\begin{equation}
+    \bar{U}_i = \frac{1}{3} \sum_{r=1}^{3} \theta_i^{(r)}
+\end{equation}
+
+Its deviation percentage from a canonical target $S_i$ is
+\begin{equation}
+    \eta_i = \frac{\\bar{U}_i - S_i}{S_i}
+\end{equation}
+
+The pair $(\bar{U}_i, \eta_i)$ forms the personalized baseline and offset for that user. Specifically, for Squats, the Knee Joint angle is calibrated to define the personalized depth threshold ($\theta_{depth}$). For Bicep Curls, the Elbow Joint angle is calibrated to define the full contraction threshold ($\theta_{peak}$). Other metrics (e.g., stability limits) rely on non-personalized biomechanical defaults to ensure safety.
+During runtime, for each joint or phase, the system:
+\begin{enumerate}
+    \item Measures the current angle $\theta_i$
+    \item Computes percentage deviation $e_i = \frac{|\theta_i - \bar{U}_i|}{|\bar{U}_i|}$
+\end{enumerate}
+
+A manually set critic parameter $\delta$ determines grading bands:
+\begin{itemize}
+    \item Good: $e_i < \delta$
+    \item Relatively good: $\delta \le e_i < 1.2 \delta$
+    \item Bad: $e_i \ge 1.2 \delta$
+\end{itemize}
+
+Repetition-level and session-level scores aggregate these joint/phase grades to summarize overall performance.
