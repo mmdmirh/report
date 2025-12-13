@@ -1,0 +1,17 @@
+\subsection{FormScript and LLM Coaching Limitations}
+
+The FormScript feedback system, while effective for real-time coaching, has several inherent limitations.
+First, the current implementation relies on manually-defined thresholds for FormCode categorization, which may not generalize across all users or exercises without personalized calibration.
+Although we demonstrated data-driven threshold optimization on the RepCount dataset, this process requires access to labeled ground-truth data that may not be available for new exercises.
+
+Second, the Super FormCode definitions are currently hardcoded for specific exercises (squats and bicep curls).
+Extending the system to new exercises requires domain expertise to define appropriate biomechanical rules and feedback mappings, limiting rapid scalability.
+Future work should explore learned representations or evolutionary approaches to automate this process.
+
+Third, the LLM-powered post-workout summaries depend on the quality and completeness of the per-rep feedback data.
+While we send all FormScript sentences to the LLM for context, the model's response quality is ultimately bounded by the information captured during the session.
+The LLM also operates as a black box, making it difficult to guarantee consistency or avoid occasionally generic advice.
+
+Finally, our FormCode validation was limited to squat exercises from a single dataset.
+Generalization to other exercises, user populations, or recording conditions remains to be validated.
+Despite these limitations, FormScript demonstrates that rule-based semantic abstractions combined with LLM reasoning provide a practical path toward explainable and personalized fitness coaching.
