@@ -20,4 +20,9 @@ Seyedmohamad's primary responsibilities include:
 \end{itemize}
 
 \paragraph{Maximilian Fuchs.}
-Please fill in the corresponding responsibilities for the remaining members (e.g., backend services, calibration logic, repetition segmentation, LLM feedback, and report writing) to keep the report self-contained.
+Maximilian Fuchs’s primary responsibilities include:
+\begin{itemize}
+    \item Design and implementation of the user-specific calibration process to derive exercise-dependent range-of-motion and timing parameters ($\theta_{\text{low}}$, $\theta_{\text{high}}$, $t_{\text{med}}$, $t_{\text{min}}$, $t_{\text{max}}$), along with auxiliary profiles (capabilities, tempo, symmetry, and form-constraint statistics), and persistent storage and activation of calibration records.
+    \item Design and implementation of the normalized repetition counting module (\texttt{rep\_counter\_v2.py}), including an online state-machine for cycle detection driven by calibrated thresholds, normalized progress estimation, and timing-based robustness checks.
+    \item Refactoring and integration of multiple 2D pose estimators into a unified, estimator-agnostic backend pipeline (\texttt{pose\_processor\_2d.py}), eliminating duplicated command and frame-processing logic and improving code maintainability without introducing new features.
+\end{itemize}
