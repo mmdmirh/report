@@ -25,12 +25,23 @@ Measure joint flexion at key moments during exercise.
 \hline
 \textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
 \hline
+\multicolumn{3}{|l|}{\textit{Generic Angle Ranges:}} \\
 completely bent & $v \pm 5 \leq 45$ & L/R-knee, L/R-elbow \\
 almost completely bent & $45 < v \pm 5 \leq 75$ & L/R-knee, L/R-elbow \\
 bent at right angle & $75 < v \pm 5 \leq 105$ & L/R-knee, L/R-elbow \\
 partially bent & $105 < v \pm 5 \leq 135$ & L/R-knee, L/R-elbow \\
 slightly bent & $135 < v \pm 5 \leq 160$ & L/R-knee, L/R-elbow \\
 straight & $v \pm 5 > 160$ & L/R-knee, L/R-elbow \\
+\hline
+\multicolumn{3}{|l|}{\textit{Squat Depth (Calibration-Adjusted):}} \\
+deep & $v \leq 90^\circ$ & squat\_depth \\
+parallel & $90^\circ < v \leq 110^\circ$ & squat\_depth \\
+shallow & $v > 110^\circ$ & squat\_depth \\
+\hline
+\multicolumn{3}{|l|}{\textit{Bicep Curl Peak Flexion:}} \\
+full\_contraction & $v \leq 60^\circ$ & peak\_flexion \\
+partial\_contraction & $60^\circ < v \leq 90^\circ$ & peak\_flexion \\
+incomplete\_rep & $v > 90^\circ$ & peak\_flexion \\
 \hline
 \end{tabular}
 \end{table}
@@ -87,9 +98,9 @@ Measure body segment orientation relative to vertical.
 \hline
 \textbf{Categorization} & \textbf{Condition} & \textbf{Applied To} \\
 \hline
-vertical (upright) & $v \pm 5 \leq 10$ & torso, pelvis \\
-ignored (leaning) & $10 < v \pm 5 \leq 80$ & torso, pelvis \\
-horizontal (bent over) & $v \pm 5 > 80$ & torso, pelvis \\
+upright & $v \leq 45^\circ$ & torso\_angle \\
+leaning & $45^\circ < v \leq 65^\circ$ & torso\_angle \\
+bent\_over & $v > 65^\circ$ & torso\_angle \\
 \hline
 \end{tabular}
 \end{table}
@@ -166,9 +177,13 @@ Measure maximum deviation from expected path or position.
 \hline
 \textbf{Categorization} & \textbf{Condition} & \textbf{Unit} & \textbf{Applied To} \\
 \hline
-stable / clean\_arc & $v \leq 0.05$ & m & knee\_stability, path\_arc \\
-slight\_wobble / wandering & $0.05 < v \leq 0.1$ & m & knee\_stability \\
-unstable & $v > 0.1$ & m & knee\_stability \\
+stable & $0.81 \leq v \leq 1.21$ & ratio & knee\_stability \\
+slight\_wobble & $v < 0.81$ & ratio & knee\_stability (valgus) \\
+unstable & $v > 1.21$ & ratio & knee\_stability \\
+\hline
+clean\_arc & $v \leq 0.05$ & m & path\_arc \\
+wandering\_arc & $v > 0.05$ & m & path\_arc \\
+\hline
 no\_swing & $v \leq 0.15$ & normalized & swing\_momentum \\
 slight\_swing & $0.15 < v \leq 0.25$ & normalized & swing\_momentum \\
 body\_swing & $v > 0.25$ & normalized & swing\_momentum \\
