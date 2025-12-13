@@ -1,2 +1,32 @@
-\subsection{Online Repetition Segmentation}
-Following AIFit's unsupervised approach, motion periodicity is analyzed from key joint angles (elbow, knee, hip). A simplified online state machine detects phase transitions—descent, bottom, ascent—using derivative sign changes with hysteresis. Each full cycle is labeled as one repetition.
+\subsection{Online Repetition Segmentation and Form Evaluation}
+
+During live operation, repetition detection and form evaluation are decoupled but driven by
+the same calibration parameters.
+
+\paragraph{Repetition Detection.}
+An online state machine operates on the primary signal and uses the calibrated thresholds
+$\theta_{\text{low}}$ and $\theta_{\text{high}}$ to detect transitions between movement phases
+(e.g., bottom, ascent, top, descent). A full traversal from bottom to top and back to bottom
+is labeled as one repetition. This stage is intentionally form-agnostic and focuses solely on
+robust cycle detection.
+
+\paragraph{Form Check and Rep Acceptance.}
+For each detected repetition, form metrics are evaluated against their calibrated normative
+references. Given a live metric value $m$ and its normative reference $m_{\text{norm}}$, the
+relative deviation is computed as:
+\begin{equation}
+    e = \frac{|m - m_{\text{norm}}|}{|m_{\text{norm}}|}.
+\end{equation}
+
+A user-controlled critic parameter $\delta$ scales the acceptable tolerance for all form
+metrics. For a detected repetition to be considered \emph{valid}, every evaluated form
+metric must satisfy the deviation constraint. Specifically, if there exists any metric
+for which
+\begin{equation}
+    e > \delta,
+\end{equation}
+the repetition is marked as invalid and is not counted, even if the kinematic cycle was
+successfully detected.
+
+Only repetitions for which all form metrics satisfy $e \le \delta$ increment the repetition
+counter.

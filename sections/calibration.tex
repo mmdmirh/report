@@ -1,33 +1,43 @@
 \subsection{Feature Computation and Calibration}
-From each repetition we compute angular features:
+
+Calibration is performed by analyzing a short recording of continuous exercise motion and
+operates directly on per-repetition extrema rather than predefined canonical poses.
+For each exercise, a primary kinematic signal is selected (e.g., elbow flexion for bicep curls,
+normalized hip height for squats), along with a set of auxiliary form-related metrics.
+
+From the calibration sequence, repetitions are first segmented using extrema of the primary
+signal. For each detected repetition $r$, the system extracts:
 \begin{itemize}
-    \item Active joints: elbows, knees, shoulders (max, min, correlation).
-    \item Passive joints: spine and pelvis (mean, standard deviation).
+    \item \textbf{Primary features}: bottom and top extrema values of the primary signal,
+    repetition amplitude, and duration.
+    \item \textbf{Form metrics}: joint angles, inter-joint distances, symmetry indices, and
+    posture-related measures computed either per frame or aggregated per repetition.
 \end{itemize}
 
-During calibration, each key joint or motion phase $i$ is analyzed over three ``best-form'' repetitions:
-The mean joint angle is
+Across all valid repetitions, the system computes aggregate statistics for each metric.
+For the primary signal, the bottom and top extrema are summarized as:
 \begin{equation}
-    \bar{U}_i = \frac{1}{3} \sum_{r=1}^{3} \theta_i^{(r)}
+    \theta_{\text{low}} = \operatorname{median}\{b_r\}, \qquad
+    \theta_{\text{high}} = \operatorname{median}\{p_r\},
 \end{equation}
+where $b_r$ and $p_r$ denote the bottom and top values of repetition $r$.
+These values define the personalized repetition detection thresholds.
 
-Its deviation percentage from a canonical target $S_i$ is
+For each form metric $m$, the calibration produces normative statistics:
 \begin{equation}
-    \eta_i = \frac{\\bar{U}_i - S_i}{S_i}
+    m_{\text{norm}} = \operatorname{median}\{m_r\}, \quad
+    \mu_m = \mathbb{E}[m_r], \quad
+    \sigma_m = \sqrt{\mathbb{E}[(m_r-\mu_m)^2]},
 \end{equation}
+along with observed minimum and maximum values.
+These statistics characterize the user’s typical movement pattern and variability during
+the calibration session.
 
-The pair $(\bar{U}_i, \eta_i)$ forms the personalized baseline and offset for that user. Specifically, for Squats, the Knee Joint angle is calibrated to define the personalized depth threshold ($\theta_{depth}$). For Bicep Curls, the Elbow Joint angle is calibrated to define the full contraction threshold ($\theta_{peak}$). Other metrics (e.g., stability limits) rely on non-personalized biomechanical defaults to ensure safety.
-During runtime, for each joint or phase, the system:
-\begin{enumerate}
-    \item Measures the current angle $\theta_i$
-    \item Computes percentage deviation $e_i = \frac{|\theta_i - \bar{U}_i|}{|\bar{U}_i|}$
-\end{enumerate}
-
-A manually set critic parameter $\delta$ determines grading bands:
+Unlike approaches that rely on fixed biomechanical targets, all thresholds and normative
+references are inferred directly from the user’s own repetitions. The resulting calibration
+parameters consist of:
 \begin{itemize}
-    \item Good: $e_i < \delta$
-    \item Relatively good: $\delta \le e_i < 1.2 \delta$
-    \item Bad: $e_i \ge 1.2 \delta$
+    \item Primary repetition thresholds $(\theta_{\text{low}}, \theta_{\text{high}})$ for counting.
+    \item Normative form references $m_{\text{norm}}$ and dispersion measures $(\mu_m, \sigma_m)$
+    for form evaluation.
 \end{itemize}
-
-Repetition-level and session-level scores aggregate these joint/phase grades to summarize overall performance.
