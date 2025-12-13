@@ -90,6 +90,44 @@ Create a TikZ block diagram with:
 
 \paragraph{Outcome:} The AI generated TikZ code which was adapted and integrated into the methodology section figures. Node styling and positioning were manually adjusted.
 
+\subsection{Form Analyzer Debugging}
+
+\paragraph{Tool:} Google Gemini 2.0 Pro
+
+\paragraph{Date:} December 2025
+
+\paragraph{Purpose:} Debug an error in the \texttt{form\_analyzer.py} module.
+
+\paragraph{Context:} The FormAnalyzer class was implemented, but the \texttt{categorize\_form\_code()} method was returning incorrect categories for edge cases.
+
+\paragraph{Prompt Used:}
+\begin{verbatim}
+I have the following error in my form_analyzer.py:
+
+TypeError: '<' not supported between instances 
+of 'NoneType' and 'float'
+
+The error occurs in categorize_form_code() when 
+checking threshold conditions. Here is the method:
+
+def categorize_form_code(self, exercise, name, value):
+    config = FORM_CODES_CONFIG[exercise]
+    for cat in config[name]["categories"]:
+        if value < cat.get("v_max"):
+            return cat["name"]
+    return None
+
+How can I fix this to handle missing v_max values?
+\end{verbatim}
+
+\paragraph{Outcome:} The AI suggested adding a conditional check for \texttt{None} values:
+\begin{verbatim}
+v_max = cat.get("v_max")
+if v_max is not None and value < v_max:
+    return cat["name"]
+\end{verbatim}
+This fix was integrated into the existing code. The core logic and architecture of \texttt{form\_analyzer.py} (419 lines) was developed independently.
+
 \section{Verification Statement}
 
 All AI-generated code was:
