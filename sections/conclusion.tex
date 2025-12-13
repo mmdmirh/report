@@ -10,7 +10,8 @@ substantially improves both joint-angle accuracy and cross-view stability withou
 
 Beyond low-level pose accuracy, FitCoachAR introduces \textbf{FormScript}, a semantic intermediate representation that transforms continuous pose measurements into interpretable FormCodes.
 This abstraction enables exercise-specific reasoning, personalized calibration, and natural-language feedback,
-supporting both real-time corrective cues and post-workout summaries.
+supporting both real-time corrective cues and post-workout summaries powered by \textbf{LLM-based coaching} (Llama 3.3 70B via Cerebras).
+We validated the FormCode system on the RepCount dataset (101 squat videos, 969 repetitions), achieving biomechanically plausible classifications through data-driven threshold optimization.
 By decoupling biomechanical definitions from pose estimation and feedback generation,
 FormScript provides a flexible and extensible framework for future exercise analysis systems.
 
@@ -22,5 +23,7 @@ between small 2D models and heavier 3D approaches in real-world fitness coaching
 
 Future work may explore finer-grained phase-specific evaluation, user studies on coaching effectiveness,
 and the extension of FormCodes to rehabilitation and clinical movement assessment.
+For FormScript specifically, future directions include developing personalized calibration for all FormCodes (not just range-of-motion metrics), expanding the exercise library beyond squats and bicep curls, and refining the LLM prompting strategy to generate more targeted coaching recommendations.
+Additionally, evolutionary algorithm (EA) approaches could automate threshold calibration without hardcoding exercise-specific parameters, and classification methods could be employed to automatically identify which joints are most biomechanically significant for each exercise type.
 Nonetheless, this project demonstrates that real-time, personalized, and explainable exercise coaching
 is achievable on consumer hardware using principled pose processing and semantic reasoning.
