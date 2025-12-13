@@ -3,6 +3,17 @@
 \begin{document}
 \maketitle
 
+\begin{abstract}
+We present \textbf{FitCoachAR}, a real-time adaptive exercise coaching system that combines lightweight pose estimation with augmented-reality feedback and LLM-powered coaching.
+The system addresses key limitations of existing fitness applications: lack of real-time corrective feedback, sensitivity to viewpoint changes, and shallow semantic analysis.
+Our contributions are threefold.
+First, we benchmark multiple pose estimation backends and propose a four-step post-processing pipeline---body-centric canonicalization, yaw compensation, adaptive temporal smoothing, and anatomical consistency projection---that substantially improves joint-angle accuracy and cross-view stability without increasing inference latency.
+Second, we introduce \textbf{FormScript}, a semantic intermediate representation that transforms raw pose measurements into interpretable \emph{FormCodes}---discrete biomechanical descriptors enabling rule-based form analysis and exercise-specific reasoning.
+These FormCodes drive both real-time AR-based corrective feedback and \textbf{LLM-powered post-workout summaries} (Llama 3.3 70B via Cerebras), which synthesize per-rep feedback into personalized coaching recommendations.
+Third, we validate the FormCode system on the RepCount dataset (101 squat videos, 969 repetitions), achieving biomechanically plausible classifications through data-driven threshold optimization.
+Together, these components enable stable, interpretable, and interactive exercise coaching on consumer-grade hardware.
+\end{abstract}
+
 % ---- Front‑matter ------------------------------------------------
 \pagenumbering{roman}
 \clearpage
