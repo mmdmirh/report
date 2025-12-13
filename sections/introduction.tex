@@ -20,7 +20,9 @@ offline processing, or heavy models.
 
 \textbf{FitCoachAR} aims to bridge the gap between academic models and consumer applications by providing a \textbf{lightweight, real-time, and adaptive coaching system}.
 It monitors exercises via 2D pose estimation, detects common form errors, and delivers feedback through \textbf{augmented-reality overlays} and \textbf{coach-style natural language cues}.
-The system personalizes its critique level through a short calibration phase and produces both live corrections and post-session summaries.
+Central to this approach is \textbf{FormScript}, a semantic intermediate representation that transforms raw pose measurements into interpretable \emph{FormCodes}---discrete biomechanical descriptors that enable rule-based form analysis and exercise-specific reasoning.
+These FormCodes drive both real-time corrective feedback and \textbf{LLM-powered post-workout summaries} (using Llama 3.3 70B via Cerebras), which synthesize per-rep feedback into personalized coaching recommendations.
+The system personalizes its critique level through a short calibration phase and produces both live corrections and comprehensive session summaries.
 
 This project addresses three major motivations:
 \begin{itemize}
